@@ -75,6 +75,29 @@ describe('ChainBuilder', function () {
         done();
       });
     });
+
+    it('allows functions to access the result of the last call', function (done) {
+      var testOneStub = sinon.stub().callsArgWith(0, null, 'one');
+      var testTwoStub = function (done) {
+        result = this.previousResult() + 'two';
+        done(null, result);
+      };
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub,
+          testTwo: testTwoStub
+        }
+      });
+
+      myChain()
+        .testOne()
+        .testTwo()
+        .end(function (err, result) {
+          assert.equal(result, 'onetwo');
+          done();
+        });
+    });
   });
 
   describe('error handling', function () {
@@ -218,7 +241,6 @@ describe('ChainBuilder', function () {
     });
   });
 
-  it('allows functions to access the result of the last call');
   it('allows different error handling methods defined throughout the chain');
   it('allows recovery from an error');
   it('allows you to transform a result');
