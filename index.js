@@ -106,6 +106,8 @@ module.exports = function (baseOptions) {
 
   // Helper methods
   Chain.prototype.hasError = function () { return !!this._currentError; };
+  Chain.prototype.previousError = function () { return this._currentError; };
+  Chain.prototype.previousResult = function () { return this._currentResult; };
 
   // Add flow hooks to prototype
 
