@@ -28,7 +28,7 @@ module.exports = function (baseOptions) {
     this._currentError = undefined;
 
     // methods that don't get skipped when an error's called
-    this._errorInterceptingMethods = { _tap: true };
+    this._errorInterceptingMethods = { _tap: true, _recover: true };
 
     // for intercepting errors thrown asynchronously
     this._domain = domain.create();
@@ -44,7 +44,15 @@ module.exports = function (baseOptions) {
    */
   Chain.prototype._tap = function (tapCallback, done) {
     tapCallback(this._currentError, this._currentResult);
-    done(this._currentError, this._currentResult);
+    this._skip()
+  };
+
+  Chain.prototype._recover = function (recoverCallback, done) {
+    if (this.hasError()) {
+      recoverCallback(this._currentError, done);
+    } else {
+      this._skip();
+    }
   };
 
   /**
@@ -87,9 +95,13 @@ module.exports = function (baseOptions) {
           done(e, undefined);
         }
       } else {
-        done(this._currentError, this._currentResult);
+        this._skip();
       }
     }
+  };
+
+  Chain.prototype._skip = function () {
+    this._done(this._currentError, this._currentResult);
   };
 
   /**
@@ -113,6 +125,7 @@ module.exports = function (baseOptions) {
 
   Chain.prototype.tap = function (tapCallback) { return this._addToChain('_tap', tapCallback); };
   Chain.prototype.end = Chain.prototype.tap;
+  Chain.prototype.recover = function (recoverCallback) { return this._addToChain('_recover', recoverCallback); };
 
   // Add provided methods to prototype
 

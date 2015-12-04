@@ -181,6 +181,53 @@ describe('ChainBuilder', function () {
         });
 
     });
+
+    it('cascades an error through tap methods', function (done) {
+      var i = 0;
+      var throwAnErrorStub = sinon.stub().callsArgWith(0, 'ERROR' + i++);
+      var normalOpStub = sinon.stub().callsArgWith(0, null, 'boring');
+
+      var myChain = chainBuilder({
+        methods: {
+          throwAnError: throwAnErrorStub,
+          normalOp: normalOpStub
+        }
+      });
+
+      var tapOne = sinon.stub();
+      var tapTwo = sinon.stub();
+      var tapThree = sinon.stub();
+      var tapFour = sinon.stub();
+
+      myChain()
+        .normalOp()
+        .tap(tapOne)
+        .throwAnError()
+        .tap(tapTwo)
+        .normalOp()
+        .tap(tapThree)
+        .throwAnError()
+        .tap(tapFour)
+        .end(function (err, result) {
+          try {
+            assert.ok(throwAnErrorStub.calledOnce);
+            assert.ok(normalOpStub.calledOnce);
+            assert.equal(err, 'ERROR0');
+
+            assert.ok(tapOne.calledOnce);
+            assert.ok(tapTwo.calledOnce);
+            assert.ok(tapThree.calledOnce);
+            assert.ok(tapFour.calledOnce);
+
+            assert.deepEqual(tapOne.firstCall.args, [ null, 'boring' ]);
+            assert.deepEqual(tapTwo.firstCall.args, [ 'ERROR0', undefined ]);
+            assert.deepEqual(tapThree.firstCall.args, [ 'ERROR0', undefined ]);
+            assert.deepEqual(tapFour.firstCall.args, [ 'ERROR0', undefined ]);
+
+            done();
+          } catch (e) { done(e); }
+        });
+    });
   });
 
   describe('real world examples', function () {
@@ -241,8 +288,53 @@ describe('ChainBuilder', function () {
     });
   });
 
-  it('allows different error handling methods defined throughout the chain');
-  it('allows recovery from an error');
+  describe('#recover', function () {
+    it('allows recovery from an error', function (done) {
+      var i = 0;
+      var throwAnErrorStub = sinon.stub().callsArgWith(0, 'ERROR' + i++);
+      var normalOpStub = sinon.stub().callsArgWith(0, null, 'boring');
+
+      var myChain = chainBuilder({
+        methods: {
+          throwAnError: throwAnErrorStub,
+          normalOp: normalOpStub
+        }
+      });
+
+      var tapOne = sinon.stub();
+      var tapTwo = sinon.stub();
+      var tapThree = sinon.stub();
+      var tapFour = sinon.stub();
+
+      myChain()
+        .throwAnError()
+        .tap(tapOne)
+        .normalOp() // skipped
+        .tap(tapTwo)
+        .recover(function (err, cb) {
+          assert.equal(err, 'ERROR0');
+          cb(null, 'FIXED IT');
+        })
+        .tap(tapThree)
+        .normalOp()
+        .tap(tapFour)
+        .end(function (err, result) {
+          try {
+            assert.equal(err, null);
+            assert.equal(result, 'boring');
+            assert.ok(normalOpStub.calledOnce);
+
+            assert.deepEqual(tapOne.firstCall.args, [ 'ERROR0', undefined ]);
+            assert.deepEqual(tapTwo.firstCall.args, [ 'ERROR0', undefined ]);
+            assert.deepEqual(tapThree.firstCall.args, [ null, 'FIXED IT' ]);
+            assert.deepEqual(tapFour.firstCall.args, [ null, 'boring' ]);
+
+            done();
+          } catch (e) { done(e); }
+        });
+    });
+  });
+
   it('allows you to transform a result');
   it('allows different recovery methods defined throughout the chain');
 });
