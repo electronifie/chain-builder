@@ -81,7 +81,7 @@ module.exports = function (baseOptions) {
 
   // Add flow hooks to prototype
 
-  Chain.prototype.tap = function (endCallback) { this._addToChain('_tap', endCallback); };
+  Chain.prototype.tap = function (tapCallback) { return this._addToChain('_tap', tapCallback); };
   Chain.prototype.end = Chain.prototype.tap;
 
   // Add provided methods to prototype
