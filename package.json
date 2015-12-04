@@ -1,0 +1,36 @@
+{
+  "name": "chainbuilder",
+  "version": "1.0.0",
+  "description": "Construct a chainable library from a set of async functions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/electronifie/chain-builder"
+  },
+  "keywords": [
+    "async",
+    "chain",
+    "module",
+    "utility",
+    "callback",
+    "promise"
+  ],
+  "author": "andrew.mckenzie@electronifie.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/electronifie/chain-builder/issues"
+  },
+  "homepage": "https://github.com/electronifie/chain-builder",
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4",
+    "require-dir": "^0.3.0",
+    "sinon": "^1.17.2"
+  },
+  "dependencies": {
+    "lodash": "^3.10.1"
+  }
+}
