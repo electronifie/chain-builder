@@ -1,5 +1,6 @@
 var _ = require('lodash');
 var curry = require('./lib/curry');
+var domain = require('domain');
 
 module.exports = function (baseOptions) {
   if (!baseOptions.methods) throw new Error('options.methods is required');
@@ -21,18 +22,29 @@ module.exports = function (baseOptions) {
     this._callQueue = [];
 
     // result provided by the last method called
-    this._lastResult = undefined;
+    this._currentResult = undefined;
+
+    // last provided error
+    this._currentError = undefined;
+
+    // methods that don't get skipped when an error's called
+    this._errorInterceptingMethods = { _tap: true };
+
+    // for intercepting errors thrown asynchronously
+    this._domain = domain.create();
+    this._domain.on('error', function (error) { this._done(error); }.bind(this));
   };
 
   /**
    * Hook that stops execution.
    *
-   * @param endCallback {Function}
+   * @param tapCallback {Function}
+   * @param done {Function}
    * @private
    */
   Chain.prototype._tap = function (tapCallback, done) {
-    tapCallback(null, this._lastResult);
-    done();
+    tapCallback(this._currentError, this._currentResult);
+    done(this._currentError, this._currentResult);
   };
 
   /**
@@ -47,7 +59,8 @@ module.exports = function (baseOptions) {
     if (!this[methodName]) throw new Error('Method not present on object: ' + methodName);
 
     var args = Array.prototype.slice.call(arguments, 1);
-    this._callQueue.push({ method: methodName, args: args });
+    var interceptError = this._errorInterceptingMethods[methodName];
+    this._callQueue.push({ method: methodName, args: args, skipOnError: !interceptError });
     this._maybeProcessNext();
     return this;
   };
@@ -64,7 +77,18 @@ module.exports = function (baseOptions) {
       this._isProcessing = true;
       var call = this._callQueue.shift();
       var done = this._done.bind(this);
-      this[call.method].apply(this, call.args.concat(done));
+      var skip = this.hasError() && call.skipOnError;
+      if (!skip) {
+        try {
+          this._domain.run(function () {
+            this[call.method].apply(this, call.args.concat(done));
+          }.bind(this));
+        } catch (e) {
+          done(e, undefined);
+        }
+      } else {
+        done(this._currentError, this._currentResult);
+      }
     }
   };
 
@@ -74,10 +98,14 @@ module.exports = function (baseOptions) {
    * @private
    */
   Chain.prototype._done = function (error, result) {
-    this._lastResult = result;
+    this._currentError = error;
+    this._currentResult = this._currentError ? undefined : result;
     this._isProcessing = false;
     this._maybeProcessNext();
   };
+
+  // Helper methods
+  Chain.prototype.hasError = function () { return !!this._currentError; };
 
   // Add flow hooks to prototype
 

@@ -70,6 +70,89 @@ describe('ChainBuilder', function () {
     });
   });
 
+  describe('error handling', function () {
+    it('catches passed errors', function (done) {
+      var testOneStub = sinon.stub().callsArgWith(0, 'AN ERROR');
+      var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub,
+          testTwo: testTwoStub
+        }
+      });
+
+      myChain()
+        .testOne()
+        .testTwo()
+        .end(function (err, result) {
+          assert.ok(testOneStub.calledOnce);
+          assert.ok(testTwoStub.notCalled);
+          assert.equal(err, 'AN ERROR');
+          assert.equal(result, undefined);
+          done();
+        });
+
+    });
+
+    it('catches thrown errors', function (done) {
+      var testOneStub = sinon.stub().throws(new Error('AN ERROR'));
+      var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub,
+          testTwo: testTwoStub
+        }
+      });
+
+      myChain()
+        .testOne()
+        .testTwo()
+        .end(function (err, result) {
+          try {
+            assert.ok(testOneStub.calledOnce);
+            assert.ok(testTwoStub.notCalled);
+            assert.equal(err.message, 'AN ERROR');
+            assert.equal(result, undefined);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+
+    });
+
+    it('catches errors thrown within async functions', function (done) {
+      var testOneStub = function (done) {
+        setTimeout(function () { throw new Error('AN ERROR'); }, 1);
+      };
+      var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub,
+          testTwo: testTwoStub
+        }
+      });
+
+      myChain()
+        .testOne()
+        .testTwo()
+        .end(function (err, result) {
+          try {
+            assert.ok(testTwoStub.notCalled);
+            assert.equal(err.message, 'AN ERROR');
+            assert.equal(result, undefined);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+
+    });
+  });
+
   describe('#tap', function () {
     it('lets you peek at the current result within a chain', function (done) {
       var testOneStub = sinon.stub().callsArgWith(0, null, 'one');
@@ -95,7 +178,6 @@ describe('ChainBuilder', function () {
     });
   });
 
-  it('catches errors');
   it('can load functions from a directory in collaboration with requireDir');
   it('allows functions to access the result of the last call');
   it('allows different error handling methods defined throughout the chain');
