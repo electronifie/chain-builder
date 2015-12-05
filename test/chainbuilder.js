@@ -335,6 +335,40 @@ describe('ChainBuilder', function () {
     });
   });
 
-  it('allows you to transform a result');
-  it('allows different recovery methods defined throughout the chain');
+  describe('#transform', function () {
+    it('allows you to transform a result', function () {
+      var testOneStub = sinon.stub().callsArgWith(0, null, 'boring');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub
+        }
+      });
+
+      var tapOne = sinon.stub();
+      var tapTwo = sinon.stub();
+
+      myChain()
+        .testOne()
+        .tap(tapOne)
+        .transform(function (err, result, cb) {
+          assert.equal(err, null);
+          assert.equal(result, 'one');
+          cb(null, result + 'two');
+        })
+        .tap(tapTwo)
+        .end(function (err, result) {
+          try {
+            assert.equal(err, null);
+            assert.equal(result, 'onetwo');
+
+            assert.deepEqual(tapOne.firstCall.args, [ null, 'one' ]);
+            assert.deepEqual(tapTwo.firstCall.args, [ null, 'onetwo' ]);
+
+            done();
+          } catch (e) { done(e); }
+        });
+    });
+  });
+
 });

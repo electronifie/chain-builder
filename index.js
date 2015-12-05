@@ -28,7 +28,7 @@ module.exports = function (baseOptions) {
     this._currentError = undefined;
 
     // methods that don't get skipped when an error's called
-    this._errorInterceptingMethods = { _tap: true, _recover: true };
+    this._errorInterceptingMethods = { _tap: true, _recover: true, _transform: true };
 
     // for intercepting errors thrown asynchronously
     this._domain = domain.create();
@@ -47,12 +47,31 @@ module.exports = function (baseOptions) {
     this._skip()
   };
 
+  /**
+   * Hook that converts an error into a valid response, then
+   * continues with the chain.
+   *
+   * @param recoverCallback
+   * @param done
+   * @private
+   */
   Chain.prototype._recover = function (recoverCallback, done) {
     if (this.hasError()) {
       recoverCallback(this._currentError, done);
     } else {
       this._skip();
     }
+  };
+
+  /**
+   * Hook that catches an error or transform's the current result.
+   *
+   * @param transformCallback {Function}
+   * @param done {Function}
+   * @private
+   */
+  Chain.prototype._transform = function (transformCallback, done) {
+    transformCallback(this._currentError, this._currentResult, done);
   };
 
   /**
@@ -126,6 +145,7 @@ module.exports = function (baseOptions) {
   Chain.prototype.tap = function (tapCallback) { return this._addToChain('_tap', tapCallback); };
   Chain.prototype.end = Chain.prototype.tap;
   Chain.prototype.recover = function (recoverCallback) { return this._addToChain('_recover', recoverCallback); };
+  Chain.prototype.transform = function (recoverCallback) { return this._addToChain('_transform', recoverCallback); };
 
   // Add provided methods to prototype
 
