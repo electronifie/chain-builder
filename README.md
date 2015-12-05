@@ -163,6 +163,6 @@ Get the final result in the chain (really just a more final sounding alias of `#
 Methods you can use from within your functions. They shouldn't be used when construction chains as they break the flow and will give you a world of async pain.
 
 #### this.previousResult()
-The result provided by the previous call in the chain.
-**@return String**
+The result provided by the previous call in the chain.  
+**@return** `String`
 
