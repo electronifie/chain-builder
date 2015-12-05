@@ -1,10 +1,10 @@
-# chainBuilder.js
+# chainBuilder.js [![Build Status](https://travis-ci.org/electronifie/chain-builder.svg)](https://travis-ci.org/electronifie/chain-builder)
 
 Make your collection of async functions chainable.
 
-[![Build Status](https://travis-ci.org/electronifie/chain-builder.svg)](https://travis-ci.org/electronifie/chain-builder)
+**To install:** `npm install chainbuilder --save`
 
-#### Convert calls like ...
+#### Convert calls like
 ```javascript
   var findUser = function (userId, cb) { ... };
   var get = function (url, cb) { ... };
@@ -19,12 +19,12 @@ Make your collection of async functions chainable.
   });
 ```
 
-#### into ...
+#### into
 ```javascript
   users.find('user-bob').getDailyStats().pluck('highScore').end(cb);
 ```
 
-#### by making your methods chainable with minimal effort, like ...
+#### by making your methods chainable with minimal effort, like
 ```javascript
   var chainBuilder = require('chainbuilder');
   var users = chainBuilder({
@@ -45,6 +45,48 @@ Make your collection of async functions chainable.
     }
   });
 ```
+
+## Alternatively, use one file per function
+
+You can keep things tidy with one file per function and requireDir (you'll need to `npm install require-dir --save`), like...
+```
+lib/
+|- getHighScores.js
+|- users/
+   |- index.js
+   |- find.js
+   |- getDailyStats.js
+   |- pluck.js
+```
+```javascript
+// lib/users/index.js
+var chainBuilder = require('chainbuilder');
+var requireDir = require('require-dir');
+module.exports = chainBuilder({ methods: requireDir('.') });
+
+// lib/getHighScores.js
+var users = require('./users');
+module.exports = function (cb) {
+  users.find('user-bob').getDailyStats().pluck('highScore').end(cb);
+};
+```
+
+## Behavior
+
+### Execution
+ 1. the chain starts executing immediately, i.e. it does not wait for end() to be called.
+ 2. each call merely returns the original instance, not a clone, so breaking a chain won't create a new one (like it does for lodash). This can result in some confusing behavior such as:  
+
+     ```javascript
+    var a = mathChain().initialNumber(1);
+    var b = a.add(2);
+    var c = a.add(3);
+    c.end(function (err, result) { /* result === 6 */ });
+     ```
+
+### Errors
+ 1. errors can be provided as the first argument of the callback or thrown
+ 2. if an error occurs, subsequent calls will be skipped until `end(...)`, `transform(...)` or `recover(...)` are encountered.
 
 # API
 ### `chainBuilder(options)`
