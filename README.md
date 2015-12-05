@@ -107,8 +107,8 @@ var request = chainBuilder({
   }
 });
 ```
-**@param options.methods Object<string, function(..., function(\*,\*))>** a dictionary of functions that take a callback as their final parameter. The callback takes an error as the first parameter, and a result as the second. Each function is run with the currently running `Chain` as `this`, so will have access to methods like `previousResult()`.  
-**@return function(options):Chain**  
+**@param** `options.methods Object<string, function(..., function(\*,\*))>` a dictionary of functions that take a callback as their final parameter. The callback takes an error as the first parameter, and a result as the second. Each function is run with the currently running `Chain` as `this`, so will have access to methods like `previousResult()`.  
+**@return** `function(options):Chain`
 
 ## `Chain`
 
@@ -132,7 +132,7 @@ request()
   .asJson()
   .tap(function (err, result) { console.log('' + result); /* > [object Object] */ })
 ```  
-**@param fn function(\*,\*)** a callback that receives an error as the first parameter or the last call's result as the second.
+**@param** `fn function(\*,\*)` a callback that receives an error as the first parameter or the last call's result as the second.
 
 #### #transform(fn)
 Alter the current value in the chain. Called when the previous call returned successfully, or if one of the previous calls 
@@ -143,7 +143,7 @@ request()
   .transform(function (err, result, cb) { cb(null, result.ip); })
   .tap(function (err, result) { console.log(result); /* > 123.123.101 */ })
 ``` 
-**@param fn function(\*,\*, function(\*,\*))** a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
+**@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
 #### #recover(fn)
 Recover from an error thrown by one of the previous calls in the chain. Similar to transform, but only called if one of the previous calls errored and is only passed the error and cb.
@@ -154,7 +154,7 @@ request()
   .recover(function (err, cb) { cb(null, '0.0.0.0'); })
   .tap(function (err, result) { console.log(result); /* > 0.0.0.0 */ })
 ``` 
-**@param fn function(\*,\*, function(\*,\*))** a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
+**@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
 #### #end(fn)
 Get the final result in the chain (really just a more final sounding alias of `#tap`).
