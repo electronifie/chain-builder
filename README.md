@@ -151,7 +151,7 @@ Recover from an error thrown by one of the previous calls in the chain. Similar 
 request()
   .get('INVALID')
   .asJson() // will not be called, as the above call threw an error
-  .recover(function (err, cb) { cb(null, 0.0.0.0); })
+  .recover(function (err, cb) { cb(null, '0.0.0.0'); })
   .tap(function (err, result) { console.log(result); /* > 0.0.0.0 */ })
 ``` 
 **@param fn function(*,*, function(*,*))** a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
