@@ -21,7 +21,7 @@ Create chains out of your async functions.
   module.exports = chainBuilder({
     methods: {
       find: function (userId, cb) { ... },
-      getGames: function () {
+      getGames: function (cb) {
         var user = this.previousResult();
         ...
       },
