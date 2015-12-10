@@ -1,11 +1,18 @@
 language: node_js
 node_js:
-  - "4.1"
-  - "4.0"
-  - "0.12"
-  - "0.11"
-  - "0.10"
-  - "iojs"
-
+- '4.1'
+- '4.0'
+- '0.12'
+- '0.11'
+- '0.10'
+- iojs
 script:
-  - "npm test"
+- npm test
+deploy:
+  provider: npm
+  email: andrewpmckenzie@gmail.com
+  api_key:
+    secure: LWUilvWVFqBhDREPAjDJK7YPI5NOJ9J1PET/gOh/R8bJPgrmgDZRzyFyYRjFLk0RpLoDc4u0ymLdBGgdmGkSy3XUDqk+5c/jZbeEi08/boQufKM37AeBA2yYBLZGrnq7jkfXZg3xNfc8LABGdALSsR2kQ7oUaLS+mtMouznLSGKsgYvqX69h8z15Rvns86735LpAEhHZlvXdF9WVy2PGwzBsOYWkrtOiWEhIVVCA65YWb1Gz5HSbEYdPSeEncaOTJt1p29uvHXBj46gi2YigPF1fEQZc7yO78nlJDMTbgTDPt0FA+U9CeENc+AOhKBa0Trr1+hqk+BSXcy9/YAuuwd5HGlk183G7eDj8aA2MErei4Pq2tZBjsXbRBs157L4ssWoBvWQwJ3OHGgGnwVoXl0Vmi5ga21LWdUpev7VimIHZN4CPmlm7DUnOl0Oxmr3DXO+c8NOGrUVksLj4X7TAJ//9xECjZwM6d9imy2S4sOTOKl8kk80Fw3IxpmLxPDRn0NyVQfI0t6EGiUW0vxBxe9FaCRZGRUO6QX/TwTxfgAoUGVpSKmsLCORXVSKMT0XSj2q1naAU1nC2S0XwfSbtYcXv3bvfRh0y2dVcHFSoYR5K7WgTaz+wTt+cCNhlmZOwYQaIGYR1Biwh0ezhG3pNnDdNeNp1qHDuK+Dfta4acGI=
+  on:
+    tags: true
+    repo: electronifie/chain-builder
