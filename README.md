@@ -1,48 +1,50 @@
 # chainBuilder.js [![Build Status](https://travis-ci.org/electronifie/chain-builder.svg)](https://travis-ci.org/electronifie/chain-builder)
 
-Make your collection of async functions chainable.
+Create chains out of your async functions.
 
 **To install:** `npm install chainbuilder --save`
 
-#### Convert calls like
+#### Write chains like this
 ```javascript
-  var findUser = function (userId, cb) { ... };
-  var get = function (url, cb) { ... };
+  var users = require('./users');
+  users
+    .find('user-bob')
+    .getGames()
+    .pluck('highScore')
+    .end(cb);
+```
 
-  findUser('user-bob', function (err, user) {
-    if (err) return cb(err);
-    get(user.dailyStatsUrl, function (err, dailyStats) {
-      if (err) return cb(err);
-      var highScores = _.pluck(dailyStats, 'highScore');
-      cb(null, highScores);
-    });
+#### With functions you provide like this
+```javascript
+  // users.js
+  var chainBuilder = require('chainbuilder');
+  module.exports = chainBuilder({
+    methods: {
+      find: function (userId, cb) { ... },
+      getGames: function (cb) {
+        var user = this.previousResult();
+        ...
+      },
+      pluck: function (key, cb) { 
+        var object = this.previousResult();
+        cb(null, _.pluck(object, key)); 
+      }
+    }
   });
 ```
 
-#### into
+#### So you can abandon code that looks like this
 ```javascript
-  users.find('user-bob').getDailyStats().pluck('highScore').end(cb);
-```
+  var findUser = function (userId, cb) { ... };
+  var getGames = function (gameIds, cb) { ... };
 
-#### by making your methods chainable with minimal effort, like
-```javascript
-  var chainBuilder = require('chainbuilder');
-  var users = chainBuilder({
-    methods: {
-      // A method that doesn't depend on previous calls can be provided without 
-      // modification. It just needs to take a callback as the final paramater
-      // in the format `function (err, result) { ... }`
-      find: findUser,
-
-      // The result of the previous call can be accessed with this.previousResult();
-      getDailyStats: function (cb) {
-        var user = this.previousResult();
-        get(user.dailyStatsUrl, cb);
-      },
-
-      // The chained methods don't need to be async.
-      pluck: function (key, cb) { cb(null, _.pluck(this.previousResult(), key)); }
-    }
+  findUser('user-bob', function (err, user) {
+    if (err) return cb(err);
+    getGames(user.gameIds, function (err, games) {
+      if (err) return cb(err);
+      var highScores = _.pluck(games, 'highScore');
+      cb(null, highScores);
+    });
   });
 ```
 
@@ -55,7 +57,7 @@ lib/
 |- users/
    |- index.js
    |- find.js
-   |- getDailyStats.js
+   |- getGames.js
    |- pluck.js
 ```
 ```javascript
@@ -63,12 +65,6 @@ lib/
 var chainBuilder = require('chainbuilder');
 var requireDir = require('require-dir');
 module.exports = chainBuilder({ methods: requireDir('.') });
-
-// lib/getHighScores.js
-var users = require('./users');
-module.exports = function (cb) {
-  users.find('user-bob').getDailyStats().pluck('highScore').end(cb);
-};
 ```
 
 ## Behavior
