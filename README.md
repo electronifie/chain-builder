@@ -177,6 +177,6 @@ The result provided by the previous call in the chain.
 **@return** `String`
 
 #### this.getSaved(string)
-The result provided by the previous call in the chain.
-**@param** `String` (optional) the name of the variable. If blank, will return a name-indexed map of saved values.
+The result provided by the previous call in the chain.  
+**@param** `String` (optional) the name of the variable. If blank, will return a name-indexed map of saved values.  
 **@return** `*`
