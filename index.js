@@ -21,6 +21,9 @@ module.exports = function (baseOptions) {
     // queue of calls to be processed
     this._callQueue = [];
 
+    // results saved for future restoration
+    this._savedResults = {};
+
     // result provided by the last method called
     this._currentResult = undefined;
 
@@ -43,7 +46,7 @@ module.exports = function (baseOptions) {
    * @private
    */
   Chain.prototype._tap = function (tapCallback, done) {
-    tapCallback(this._currentError, this._currentResult);
+    tapCallback.call(this, this._currentError, this._currentResult);
     this._skip()
   };
 
@@ -57,7 +60,7 @@ module.exports = function (baseOptions) {
    */
   Chain.prototype._recover = function (recoverCallback, done) {
     if (this.hasError()) {
-      recoverCallback(this._currentError, done);
+      recoverCallback.call(this, this._currentError, done);
     } else {
       this._skip();
     }
@@ -71,7 +74,7 @@ module.exports = function (baseOptions) {
    * @private
    */
   Chain.prototype._transform = function (transformCallback, done) {
-    transformCallback(this._currentError, this._currentResult, done);
+    transformCallback.call(this, this._currentError, this._currentResult, done);
   };
 
   /**
@@ -135,17 +138,56 @@ module.exports = function (baseOptions) {
     this._maybeProcessNext();
   };
 
+  /**
+   * Save the previous result so it can be used later.
+   *
+   * @param variableName {String}
+   * @param done {Function}
+   * @private
+   */
+  Chain.prototype._save = function (variableName, done) {
+    this._savedResults[variableName] = this._currentResult;
+    done(this._currentError, this._currentResult);
+  };
+
+  /**
+   * Restore the named result so it can be accessed with .previousResult() or .saved().
+   *
+   * @param variableName {String}
+   * @param done {Function}
+   * @private
+   */
+  Chain.prototype._save = function (variableName, done) {
+    this._savedResults[variableName] = this._currentResult;
+    done(this._currentError, this._currentResult);
+  };
+
+  /**
+   * Restore the named result so it can be accessed with .previousResult() or .saved().
+   *
+   * @param variableName {String}
+   * @param done {Function}
+   * @private
+   */
+  Chain.prototype._restore = function (variableName, done) {
+    done(this._currentError, variableName ? this._savedResults[variableName] : this._savedResults);
+  };
+
   // Helper methods
   Chain.prototype.hasError = function () { return !!this._currentError; };
   Chain.prototype.previousError = function () { return this._currentError; };
   Chain.prototype.previousResult = function () { return this._currentResult; };
+  Chain.prototype.getSaved = function (variableName) { return variableName ? this._savedResults[variableName] : this._savedResults; };
 
   // Add flow hooks to prototype
 
   Chain.prototype.tap = function (tapCallback) { return this._addToChain('_tap', tapCallback); };
   Chain.prototype.end = Chain.prototype.tap;
   Chain.prototype.recover = function (recoverCallback) { return this._addToChain('_recover', recoverCallback); };
-  Chain.prototype.transform = function (recoverCallback) { return this._addToChain('_transform', recoverCallback); };
+  Chain.prototype.transform = function (transformCallback) { return this._addToChain('_transform', transformCallback); };
+  Chain.prototype.save = function (variableName) { return this._addToChain('_save', variableName); };
+  Chain.prototype.restore = function (variableName) { return this._addToChain('_restore', variableName); };
+  Chain.prototype.with = function (variableName) { return this._addToChain('_restore', variableName); };
 
   // Add provided methods to prototype
 

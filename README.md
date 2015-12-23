@@ -156,6 +156,20 @@ request()
 ``` 
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
+#### #save(string), #restore(string)
+Save the result of the previous call, and restore it later in the chain. Calling restore without an argument will return an object with all saved values. Saved values can also be accessed from within your functions with this.getSaved().
+```javascript 
+request()
+  .get('http://jsonip.com')
+  .save('resultAsString')
+  .asJson()
+  .transform(function (err, result, cb) { cb(null, result.ip); })
+  .tap(function (err, result) { console.log(result); /* > 123.123.101 */ })
+  .restore('resultAsJson')
+  .tap(function (err, result) { console.log(result); /* > {"ip":"123.123.101","about":"/about","Pro!":"http://getjsonip.com"} */ })
+``` 
+**@param** `String` (optional for #restore) the name of the variable.
+
 #### #end(fn)
 Get the final result in the chain (really just a more final sounding alias of `#tap`).
 
@@ -166,3 +180,7 @@ Methods you can use from within your functions. They shouldn't be used when cons
 The result provided by the previous call in the chain.  
 **@return** `String`
 
+#### this.getSaved(string)
+The result provided by the previous call in the chain.
+**@param** `String` (optional) the name of the variable. If blank, will return a name-indexed map of saved values.
+**@return** `*`

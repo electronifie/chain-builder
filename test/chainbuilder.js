@@ -371,4 +371,43 @@ describe('ChainBuilder', function () {
     });
   });
 
+  describe('#save, #restore, #getSaved', function () {
+    it('lets you save and restore results', function (done) {
+      var testOneStub = sinon.stub().callsArgWith(0, null, 'one');
+      var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub,
+          testTwo: testTwoStub
+        }
+      });
+
+      myChain()
+        .testTwo()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(result, 'two');
+        })
+        .save('two-result')
+        .testOne()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(result, 'one');
+        })
+        .restore('two-result')
+        .tap(function (err, result) {
+          if (err) return;
+          assert.deepEqual(this.getSaved('two-result'), 'two');
+          assert.deepEqual(this.getSaved(), { 'two-result': 'two' });
+          assert.equal(result, 'two');
+        })
+        .restore()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.deepEqual(result, { 'two-result': 'two' });
+        })
+        .end(done);
+    });
+  });
 });
