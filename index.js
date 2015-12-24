@@ -33,6 +33,9 @@ module.exports = function (baseOptions) {
     // methods that don't get skipped when an error's called
     this._errorInterceptingMethods = { _tap: true, _recover: true, _transform: true };
 
+    // method to consume the next call that comes in instead of adding it to the chain.
+    this._waitingCallConsumer = null;
+
     // for intercepting errors thrown asynchronously
     this._domain = domain.create();
     this._domain.on('error', function (error) { this._done(error); }.bind(this));
@@ -47,7 +50,7 @@ module.exports = function (baseOptions) {
    */
   Chain.prototype._tap = function (tapCallback, done) {
     tapCallback.call(this, this._currentError, this._currentResult);
-    this._skip()
+    this._skip(done);
   };
 
   /**
@@ -62,7 +65,7 @@ module.exports = function (baseOptions) {
     if (this.hasError()) {
       recoverCallback.call(this, this._currentError, done);
     } else {
-      this._skip();
+      this._skip(done);
     }
   };
 
@@ -90,9 +93,73 @@ module.exports = function (baseOptions) {
 
     var args = Array.prototype.slice.call(arguments, 1);
     var interceptError = this._errorInterceptingMethods[methodName];
-    this._callQueue.push({ method: methodName, args: args, skipOnError: !interceptError });
-    this._maybeProcessNext();
+    var callDescriptor = { method: methodName, args: args, skipOnError: !interceptError };
+
+    this._callQueue.push(callDescriptor);
+    if (this._waitingCallConsumer) {
+      this._processCallConsumer();
+    } else {
+      this._maybeProcessNext();
+    }
     return this;
+  };
+
+  /**
+   * Pass the next call in the chain to the cb.
+   *
+   * @param {Function} cb
+   * @private
+   */
+  Chain.prototype._consumeNextCall = function (cb) {
+    if (this._waitingCallConsumer) throw new Error('You can\'t (yet) follow a forward-looking function with another forward-looking function.');
+
+    this._waitingCallConsumer = cb;
+    if (this._callQueue.length) {
+      this._processCallConsumer();
+    }
+  };
+
+  Chain.prototype._processCallConsumer = function () {
+    var call = this._callQueue.shift();
+    var consumer = this._waitingCallConsumer;
+    this._runSafely(function () {
+      // _processCallConsumer should only be called when there's a consumer and call present
+      if (!call) throw new Error('_processCallConsumer called when a call wasn\'t present in the queue.');
+      if (!consumer) throw new Error('_processCallConsumer called when a consumer wasn\'t present in the queue.');
+
+      consumer.call(this, null, call);
+      // set this after, so the consumer can check it's not stacked
+      this._waitingCallConsumer = null;
+    });
+  };
+
+  /**
+   * Run a callback with the current context, capturing any thrown errors.
+   *
+   * @param {Function} cb
+   * @private
+   */
+  Chain.prototype._runSafely = function (cb) { this._domain.run(cb.bind(this)); };
+
+  /**
+   * Run a call descriptor from the queue.
+   *
+   * @param {Object} callDescriptor
+   * @param {String} callDescriptor.method
+   * @param {*[]} callDescriptor.args
+   * @param {Function} done
+   *
+   * @private
+   */
+  Chain.prototype._runCall = function (callDescriptor, done) {
+    done = done.bind(this);
+    try {
+      this._runSafely(function () {
+        this[ callDescriptor.method ].apply(this, callDescriptor.args.concat(done));
+      });
+    } catch (e) {
+      done(e, undefined);
+    }
   };
 
   /**
@@ -105,26 +172,17 @@ module.exports = function (baseOptions) {
 
     if (this._callQueue.length) {
       this._isProcessing = true;
-      var call = this._callQueue.shift();
-      var done = this._done.bind(this);
-      var skip = this.hasError() && call.skipOnError;
+      var callDescriptor = this._callQueue.shift();
+      var skip = this.hasError() && callDescriptor.skipOnError;
       if (!skip) {
-        try {
-          this._domain.run(function () {
-            this[call.method].apply(this, call.args.concat(done));
-          }.bind(this));
-        } catch (e) {
-          done(e, undefined);
-        }
+        this._runCall(callDescriptor, this._done);
       } else {
-        this._skip();
+        this._skip(this._done.bind(this));
       }
     }
   };
 
-  Chain.prototype._skip = function () {
-    this._done(this._currentError, this._currentResult);
-  };
+  Chain.prototype._skip = function (done) { done(this._currentError, this._currentResult); };
 
   /**
    * Process the next method in the queue.
@@ -157,26 +215,51 @@ module.exports = function (baseOptions) {
    * @param done {Function}
    * @private
    */
-  Chain.prototype._save = function (variableName, done) {
-    this._savedResults[variableName] = this._currentResult;
-    done(this._currentError, this._currentResult);
+  Chain.prototype._restore = function (variableName, done) {
+    done(this._currentError, variableName ? this._savedResults[variableName] : this._savedResults);
   };
 
   /**
-   * Restore the named result so it can be accessed with .previousResult() or .saved().
+   * Run the next item in the chain as an iterator across the previous result.
    *
-   * @param variableName {String}
-   * @param done {Function}
+   * @param done
    * @private
    */
-  Chain.prototype._restore = function (variableName, done) {
-    done(this._currentError, variableName ? this._savedResults[variableName] : this._savedResults);
+  Chain.prototype._mapResult = function (done) {
+    this._consumeNextCall(function (err, callDescriptor) {
+      if (err) return done(err);
+
+      var previousResults = this._currentResult;
+      if (_.isEmpty(previousResults)) return this._skip();
+      if (!_.isArray(previousResults)) {
+        return done(new Error('Expected an Array, but got a ' + typeof previousResults + ': ' + JSON.stringify(previousResults)));
+      }
+
+      var currentResult = [];
+      var error = null;
+
+      var next = function () {
+        if ((previousResults.length === 0) || error) {
+          return done(error, currentResult);
+        } else {
+          this._currentResult = previousResults.shift();
+          this._runCall(callDescriptor, function (err, result) {
+            error = err;
+            currentResult.push(result);
+            next();
+          });
+        }
+      }.bind(this);
+
+      next();
+    });
   };
 
   // Helper methods
   Chain.prototype.hasError = function () { return !!this._currentError; };
   Chain.prototype.previousError = function () { return this._currentError; };
   Chain.prototype.previousResult = function () { return this._currentResult; };
+  Chain.prototype.getMethod = function (methodName) { return methods[methodName].apply(this); };
   Chain.prototype.getSaved = function (variableName) { return variableName ? this._savedResults[variableName] : this._savedResults; };
 
   // Add flow hooks to prototype
@@ -188,6 +271,8 @@ module.exports = function (baseOptions) {
   Chain.prototype.save = function (variableName) { return this._addToChain('_save', variableName); };
   Chain.prototype.restore = function (variableName) { return this._addToChain('_restore', variableName); };
   Chain.prototype.with = function (variableName) { return this._addToChain('_restore', variableName); };
+  Chain.prototype.mapResult = function () { return this._addToChain('_mapResult'); };
+  Chain.prototype.eachResult = function () { return this._addToChain('_mapResult'); };
 
   // Add provided methods to prototype
 

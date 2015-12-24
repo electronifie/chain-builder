@@ -98,6 +98,29 @@ describe('ChainBuilder', function () {
           done();
         });
     });
+
+    it('give functions to access to other functions via this.getMethod(functionName).', function (done) {
+      var prefixPrepender = function (prefix, word, done) { done(null, prefix + word); };
+      var inPrepender = function (word, done) { this.getMethod('prefixPrepender')('in', word, done); };
+
+      var myChain = chainBuilder({
+        methods: {
+          prefixPrepender: prefixPrepender,
+          inPrepender: inPrepender
+        }
+      });
+
+      myChain()
+        .prefixPrepender('con', 'sequential')
+        .tap(function (err, result) {
+          assert.equal(result, 'consequential');
+        })
+        .inPrepender('satiable')
+        .tap(function (err, result) {
+          assert.equal(result, 'insatiable');
+        })
+        .end(done);
+    });
   });
 
   describe('error handling', function () {
@@ -408,6 +431,85 @@ describe('ChainBuilder', function () {
           assert.deepEqual(result, { 'two-result': 'two' });
         })
         .end(done);
+    });
+  });
+
+  describe('#mapResult', function () {
+    var myChain;
+    beforeEach(function () {
+      myChain = chainBuilder({
+        methods: {
+          getNumber: function (done) { done(null, 'one'); },
+          getNumberArray: function (done) { done(null, ['one', 'two', 'three']); },
+          prepend: function (pre, done) { done(null, pre + this.previousResult()); },
+          prependThatErrorsOnTwo: function (pre, done) {
+            var prev = this.previousResult();
+            if (prev === 'two') throw new Error('I DONT LIKE TWO');
+            done(null, pre + prev);
+          }
+        }
+      });
+    });
+
+    it('calls the next method in the chain for each result, mapping the result.', function (done) {
+      myChain()
+        .getNumberArray()
+        .mapResult()
+          .prepend('TRANSFORMED_')
+        .tap(function (err, result) {
+          if (err) return;
+          assert.deepEqual(result, ['TRANSFORMED_one', 'TRANSFORMED_two', 'TRANSFORMED_three']);
+        })
+        .end(done);
+    });
+
+    it('handles errors.', function (done) {
+      myChain()
+        .getNumberArray()
+        .mapResult()
+          .prependThatErrorsOnTwo('TRANSFORMED_')
+        .end(function (err, result) {
+          try {
+            assert.deepEqual(err && err.message, 'I DONT LIKE TWO');
+            assert.notOk(result);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+    });
+
+    it('errors if provided a non-array.', function (done) {
+      myChain()
+        .getNumberArray()
+        .mapResult()
+          .mapResult()
+            .prepend('TRANSFORMED_')
+        .end(function (err, result) {
+          try {
+            assert.deepEqual(err && err.message, 'You can\'t (yet) follow a forward-looking function with another forward-looking function.');
+            assert.notOk(result);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+    });
+
+    it('errors if stacked.', function (done) {
+      myChain()
+        .getNumber()
+        .mapResult()
+          .prepend('TRANSFORMED_')
+        .end(function (err, result) {
+          try {
+            assert.deepEqual(err && err.message, 'Expected an Array, but got a string: "one"');
+            assert.notOk(result);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
     });
   });
 });

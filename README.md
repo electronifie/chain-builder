@@ -96,8 +96,12 @@ var request = chainBuilder({
         if (response.statusCode === 200) cb(null, response.body) else cb(response.statusMessage);
       }); 
     },
+    getFromPreviousResult: function (cb) {
+      // Note, all custom methods are available on the current object prepended with '_'. So this._get(...) calls the get method above.
+      this.getMethod('get')(this.previousResult(), cb);
+    },
     asJson: function (cb) { 
-      cb(null, JSON.stringify(this.previousResponse.body)); 
+      cb(null, JSON.stringify(this.previousResult().body));
     },
     ...
   }
@@ -166,6 +170,19 @@ request()
 ``` 
 **@param** `String` (optional for #restore) the name of the variable.
 
+#### #mapResult(), #eachResult()
+Map the next item on the chain over the results of the previous item. Expects the previous item in the chain to return an array (or a nullable object).
+The next call in the chain will be used to iterate over the array, with this.previousResult() returning the current item in the array.  
+```javascript 
+request()
+  .get('http://myco.com/users')
+  .tap(function (err, result) { console.log(result); /* > [{ name: 'Sue', websiteUrl: 'http://sueswebsite.com' }, { name: 'Harry', websiteUrl: 'http://harryswebsite.com' }] */ });
+  .mapResult().transform(function (err, result, cb) { return result.websiteUrl });
+  .tap(function (err, result) { console.log(result); /* > ['http://sueswebsite.com', 'http://sueswebsite.com'] */ });
+  .mapResult().getFromPreviousResult();
+  .tap(function (err, result) { console.log(result); /* > ['<html><body>Sue\'s website!</body></html>', '<html><body>Harry\'s website!</body></html>'] */ });
+``` 
+
 #### #end(fn)
 Get the final result in the chain (really just a more final sounding alias of `#tap`).
 
@@ -175,6 +192,11 @@ Methods you can use from within your functions. They shouldn't be used when cons
 #### this.previousResult()
 The result provided by the previous call in the chain.  
 **@return** `String`
+
+#### this.getMethod(string)
+Gets a method passed via the methods options.  
+**@param** `String` the name of the method  
+**@return** `Function`  
 
 #### this.getSaved(string)
 The result provided by the previous call in the chain.  
