@@ -97,7 +97,6 @@ var request = chainBuilder({
       }); 
     },
     getFromPreviousResult: function (cb) {
-      // Note, all custom methods are available on the current object prepended with '_'. So this._get(...) calls the get method above.
       this.getMethod('get')(this.previousResult(), cb);
     },
     asJson: function (cb) { 
