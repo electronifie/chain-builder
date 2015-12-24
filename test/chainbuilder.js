@@ -117,6 +117,7 @@ describe('ChainBuilder', function () {
         })
         .inPrepender('satiable')
         .tap(function (err, result) {
+          if (err) return;
           assert.equal(result, 'insatiable');
         })
         .end(done);

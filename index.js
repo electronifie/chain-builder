@@ -259,7 +259,7 @@ module.exports = function (baseOptions) {
   Chain.prototype.hasError = function () { return !!this._currentError; };
   Chain.prototype.previousError = function () { return this._currentError; };
   Chain.prototype.previousResult = function () { return this._currentResult; };
-  Chain.prototype.getMethod = function (methodName) { return methods[methodName].apply(this); };
+  Chain.prototype.getMethod = function (methodName) { return methods[methodName].bind(this); };
   Chain.prototype.getSaved = function (variableName) { return variableName ? this._savedResults[variableName] : this._savedResults; };
 
   // Add flow hooks to prototype
