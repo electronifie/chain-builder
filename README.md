@@ -75,7 +75,8 @@ Some common libraries are available as mixins. They're added to your chain via t
 module.exports = chainBuilder({
   methods: {/* ... your methods ... */},
   mixins: [
-    require('chainbuilder-lodash')()
+    require('chainbuilder-lodash')(),   // Adds lodash methods like map, forEach, flatten etc...
+    require('chainbuilder-request')()   // Adds methods for making HTTP requests
   ]
 });
 ```
