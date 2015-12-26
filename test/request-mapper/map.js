@@ -1,5 +1,4 @@
-var _ = require('lodash');
 module.exports = function (mapper, done) {
-  var result = _.map(this.previousResult(), mapper);
+  var result = this.previousResult().map(mapper);
   done(null, result);
 };
