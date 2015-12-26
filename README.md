@@ -82,6 +82,7 @@ module.exports = chainBuilder({
 
 Known mixins:
  - [lodash](https://github.com/andrewpmckenzie/chainbuilder-lodash)
+ - [request](https://github.com/andrewpmckenzie/chainbuilder-request)
 
 ## Behavior
 
