@@ -287,6 +287,65 @@ describe('ChainBuilder', function () {
     });
   });
 
+  describe('mixins', function () {
+    it('can mix in packages of functions', function (done) {
+      var mixinPackageOne = {
+        one: sinon.stub().callsArgWith(0, null, 'one'),
+        two: sinon.stub().callsArgWith(0, null, 'two')
+      };
+      var mixinPackageTwo = {
+        three: sinon.stub().callsArgWith(0, null, 'three')
+      };
+
+      var myChain = chainBuilder({
+        methods: {
+          four: sinon.stub().callsArgWith(0, null, 'four')
+        },
+        mixins: [mixinPackageOne, mixinPackageTwo]
+      });
+
+      myChain()
+        .one()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(result, 'one')
+        })
+        .two()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(result, 'two')
+        })
+        .three()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(result, 'three')
+        })
+        .four()
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(result, 'four')
+        })
+        .end(done);
+    });
+
+    it('throws an error if a method was provided by another mixin', function () {
+      var mixinPackageOne = {
+        one: sinon.stub().callsArgWith(0, null, 'one'),
+        two: sinon.stub().callsArgWith(0, null, 'two')
+      };
+      var mixinPackageTwo = {
+        two: sinon.stub().callsArgWith(0, null, 'two'),
+        three: sinon.stub().callsArgWith(0, null, 'three')
+      };
+
+      assert.throws(function () {
+        var myChain = chainBuilder({
+          mixins: [mixinPackageOne, mixinPackageTwo]
+        });
+      }, 'Method "two" was provided by "mixin #0" and "mixin #1".');
+    });
+  });
+
   describe('#tap', function () {
     it('lets you peek at the current result within a chain', function (done) {
       var testOneStub = sinon.stub().callsArgWith(0, null, 'one');

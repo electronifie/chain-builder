@@ -3,8 +3,25 @@ var curry = require('./lib/curry');
 var domain = require('domain');
 
 module.exports = function (baseOptions) {
-  if (!baseOptions.methods) throw new Error('options.methods is required');
-  var methods = baseOptions.methods;
+  if (! (baseOptions.methods || baseOptions.mixins)) throw new Error('options.methods or options.mixins must be provided.');
+  var passedMethods = baseOptions.methods;
+  var passedMixins = baseOptions.mixins;
+
+  var methods = {};
+  var methodSources = {};
+
+  var addMethod = function (name, method, source) {
+    if (methods[name]) throw new Error('Method "' + name + '" was provided by "' + methodSources[name] + '" and "' + source + '".');
+    methods[name] = method;
+    methodSources[name] = source;
+  };
+
+  var addMethods = function (methodMap, source) {
+    for (var name in methodMap) addMethod(name, methodMap[name], source);
+  };
+
+  addMethods(passedMethods, 'methods');
+  for (i = 0; i < (baseOptions.mixins || []).length; i++) addMethods(baseOptions.mixins[i], 'mixin #' + i);
 
   /**
    * The base Chain object. Keeps track of pending calls and
