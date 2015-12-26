@@ -67,6 +67,22 @@ var requireDir = require('require-dir');
 module.exports = chainBuilder({ methods: requireDir('.') });
 ```
 
+## Mixins
+
+Some common libraries are available as mixins. They're added to your chain via the `mixins` option:
+
+```javascript
+module.exports = chainBuilder({
+  methods: {/* ... your methods ... */},
+  mixins: [
+    require('chainbuilder-lodash')()
+  ]
+});
+```
+
+Known mixins:
+ - [lodash](https://github.com/andrewpmckenzie/chainbuilder-lodash)
+
 ## Behavior
 
 ### Execution
