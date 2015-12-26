@@ -1,4 +1,3 @@
-var _ = require('lodash');
 var curry = require('./lib/curry');
 var domain = require('domain');
 
@@ -247,8 +246,8 @@ module.exports = function (baseOptions) {
       if (err) return done(err);
 
       var previousResults = this._currentResult;
-      if (_.isEmpty(previousResults)) return this._skip();
-      if (!_.isArray(previousResults)) {
+      if (!previousResults) return this._skip();
+      if (! (previousResults instanceof Array)) {
         return done(new Error('Expected an Array, but got a ' + typeof previousResults + ': ' + JSON.stringify(previousResults)));
       }
 

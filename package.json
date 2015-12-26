@@ -31,7 +31,5 @@
     "require-dir": "^0.3.0",
     "sinon": "^1.17.2"
   },
-  "dependencies": {
-    "lodash": "^3.10.1"
-  }
+  "dependencies": {}
 }
