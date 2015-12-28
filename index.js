@@ -26,5 +26,11 @@ module.exports = function (baseOptions) {
   var Chain = chainFactory(methods);
 
   // Return a constructor for the chain
-  return function (initialResult) { return new Chain({ initialResult: initialResult }); };
+  return function (initialResult) {
+    if (initialResult) {
+      return new Chain({ initialResult: initialResult });
+    } else {
+      return new Chain();
+    }
+  };
 };

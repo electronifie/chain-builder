@@ -33,20 +33,20 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .testTwo('FOO')
         .testThree()
         .testOne()
         .testTwo('BAR')
         .testOne()
         .end(function (err, result) {
-          assert.deepEqual(calls, ['test-two:FOO', 'test-three', 'test-one', 'test-two:BAR', 'test-one'])
+          assert.deepEqual(calls, ['test-two:FOO', 'test-three', 'test-one', 'test-two:BAR', 'test-one']);
           assert.equal(result, 'one');
           done();
         });
     });
 
-    it('executes immediately', function (done) {
+    it('executes immediately if an initial value is passed', function (done) {
       var testOneStub = sinon.stub();
       var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
 
@@ -57,7 +57,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      var myChainImpl = myChain()
+      var myChainImpl = myChain({})
         .testOne();
 
       assert.ok(testOneStub.calledOnce);
@@ -71,6 +71,37 @@ describe('ChainBuilder', function () {
       assert.ok(testTwoStub.calledOnce);
 
       myChainImpl.end(function (err, result) {
+        assert.equal(result, 'two');
+        done();
+      });
+    });
+
+    it('defers execution until #run() is called if nothing is passed', function (done) {
+      var initialValue;
+      var testOneStub = sinon.spy(function (done) {
+        initialValue = this.previousResult();
+        done();
+      });
+      var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub,
+          testTwo: testTwoStub
+        }
+      });
+
+      var myChainImpl = myChain()
+        .testOne()
+        .testTwo();
+
+      assert.ok(testOneStub.notCalled);
+      assert.ok(testTwoStub.notCalled);
+
+      myChainImpl.run('zero', function (err, result) {
+        assert.ok(testOneStub.calledOnce);
+        assert.ok(testTwoStub.calledOnce);
+        assert.equal(initialValue, 'zero');
         assert.equal(result, 'two');
         done();
       });
@@ -90,7 +121,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .testOne()
         .testTwo()
         .end(function (err, result) {
@@ -110,7 +141,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .prefixPrepender('con', 'sequential')
         .tap(function (err, result) {
           assert.equal(result, 'consequential');
@@ -136,7 +167,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .testOne()
         .testTwo()
         .end(function (err, result) {
@@ -160,7 +191,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .testOne()
         .testTwo()
         .end(function (err, result) {
@@ -190,7 +221,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .testOne()
         .testTwo()
         .end(function (err, result) {
@@ -223,7 +254,7 @@ describe('ChainBuilder', function () {
       var tapThree = sinon.stub();
       var tapFour = sinon.stub();
 
-      myChain()
+      myChain({})
         .normalOp()
         .tap(tapOne)
         .throwAnError()
@@ -272,7 +303,7 @@ describe('ChainBuilder', function () {
         methods: requireDir('./request-mapper')
       });
 
-      requestMapper()
+      requestMapper({})
         .get('http://myapi.com/users.json')
         .map(function (user) { return user.name; })
         .end(function (err, result) {
@@ -304,7 +335,7 @@ describe('ChainBuilder', function () {
         mixins: [mixinPackageOne, mixinPackageTwo]
       });
 
-      myChain()
+      myChain({})
         .one()
         .tap(function (err, result) {
           if (err) return;
@@ -358,7 +389,7 @@ describe('ChainBuilder', function () {
         }
       });
 
-      myChain()
+      myChain({})
         .testTwo()
         .tap(function (err, result) {
           assert.equal(result, 'two');
@@ -389,7 +420,7 @@ describe('ChainBuilder', function () {
       var tapThree = sinon.stub();
       var tapFour = sinon.stub();
 
-      myChain()
+      myChain({})
         .throwAnError()
         .tap(tapOne)
         .normalOp() // skipped
@@ -431,7 +462,7 @@ describe('ChainBuilder', function () {
       var tapOne = sinon.stub();
       var tapTwo = sinon.stub();
 
-      myChain()
+      myChain({})
         .testOne()
         .tap(tapOne)
         .transform(function (err, result, cb) {
