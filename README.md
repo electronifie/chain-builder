@@ -173,33 +173,6 @@ request()
 ``` 
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
-#### #save(string), #restore(string)
-Save the result of the previous call, and restore it later in the chain. Calling restore without an argument will return an object with all saved values. Saved values can also be accessed from within your functions with this.getSaved().
-```javascript 
-request()
-  .get('http://jsonip.com')
-  .save('resultAsString')
-  .asJson()
-  .transform(function (err, result, cb) { cb(null, result.ip); })
-  .tap(function (err, result) { console.log(result); /* > 123.123.101 */ })
-  .restore('resultAsJson')
-  .tap(function (err, result) { console.log(result); /* > {"ip":"123.123.101","about":"/about","Pro!":"http://getjsonip.com"} */ })
-``` 
-**@param** `String` (optional for #restore) the name of the variable.
-
-#### #mapResult(), #eachResult()
-Map the next item on the chain over the results of the previous item. Expects the previous item in the chain to return an array (or a nullable object).
-The next call in the chain will be used to iterate over the array, with this.previousResult() returning the current item in the array.  
-```javascript 
-request()
-  .get('http://myco.com/users')
-  .tap(function (err, result) { console.log(result); /* > [{ name: 'Sue', websiteUrl: 'http://sueswebsite.com' }, { name: 'Harry', websiteUrl: 'http://harryswebsite.com' }] */ });
-  .mapResult().transform(function (err, result, cb) { return result.websiteUrl });
-  .tap(function (err, result) { console.log(result); /* > ['http://sueswebsite.com', 'http://sueswebsite.com'] */ });
-  .mapResult().getFromPreviousResult();
-  .tap(function (err, result) { console.log(result); /* > ['<html><body>Sue\'s website!</body></html>', '<html><body>Harry\'s website!</body></html>'] */ });
-``` 
-
 #### #end(fn)
 Get the final result in the chain (really just a more final sounding alias of `#tap`).
 
@@ -214,8 +187,3 @@ The result provided by the previous call in the chain.
 Gets a method passed via the methods options.  
 **@param** `String` the name of the method  
 **@return** `Function`  
-
-#### this.getSaved(string)
-The result provided by the previous call in the chain.  
-**@param** `String` (optional) the name of the variable. If blank, will return a name-indexed map of saved values.  
-**@return** `*`
