@@ -77,33 +77,34 @@ describe('ChainBuilder', function () {
     });
 
     it('defers execution until #run() is called if nothing is passed', function (done) {
-      var initialValue;
-      var testOneStub = sinon.spy(function (done) {
-        initialValue = this.previousResult();
-        done();
-      });
-      var testTwoStub = sinon.stub().callsArgWith(0, null, 'two');
+      var plusStub = sinon.spy(function (num, done) { done(null, this.previousResult() + num); });
+      var timesStub = sinon.spy(function (num, done) { done(null, this.previousResult() * num); });
 
       var myChain = chainBuilder({
         methods: {
-          testOne: testOneStub,
-          testTwo: testTwoStub
+          plus: plusStub,
+          times: timesStub
         }
       });
 
       var myChainImpl = myChain()
-        .testOne()
-        .testTwo();
+        .times(3)
+        .plus(2);
 
-      assert.ok(testOneStub.notCalled);
-      assert.ok(testTwoStub.notCalled);
+      assert.ok(plusStub.notCalled);
+      assert.ok(timesStub.notCalled);
 
-      myChainImpl.run('zero', function (err, result) {
-        assert.ok(testOneStub.calledOnce);
-        assert.ok(testTwoStub.calledOnce);
-        assert.equal(initialValue, 'zero');
-        assert.equal(result, 'two');
-        done();
+      myChainImpl.run(5, function (err, result) {
+        assert.ok(plusStub.calledOnce);
+        assert.ok(timesStub.calledOnce);
+        assert.equal(result, 17);
+
+        myChainImpl.run(2, function (err, result) {
+          assert.ok(plusStub.calledTwice);
+          assert.ok(timesStub.calledTwice);
+          assert.equal(result, 8);
+          done();
+        });
       });
     });
 
@@ -152,6 +153,57 @@ describe('ChainBuilder', function () {
           assert.equal(result, 'insatiable');
         })
         .end(done);
+    });
+
+    it('allows definition of sub-chains', function (done) {
+      var getArray = function (done) { return done(null, [1, 2, 3]); };
+      var plus = function (num, done) { done(null, this.previousResult() + num); };
+      var times = function (num, done) { done(null, this.previousResult() * num); };
+      var beginMap = function (done) {
+        this.skip(done);
+      };
+      beginMap.$beginSubchain = 'map';
+
+      var endMap = function (subchain, done) {
+        var source = this.previousResult();
+
+        var iterate = function (results) {
+          var i = results.length;
+          if (i == source.length) return done(null, results);
+          var nextResult = source[i];
+          subchain.run(nextResult, function (err, result) {
+            if (err) return done(err);
+            results.push(result);
+            iterate(results);
+          });
+        };
+        iterate([]);
+      };
+      endMap.$endSubchain = 'map';
+
+      var myChain = chainBuilder({
+        methods: {
+          $begin_map: beginMap,
+          $end_map: endMap,
+          process: process,
+          getArray: getArray,
+          plus: plus,
+          times: times
+        }
+      });
+
+      myChain({})
+        .getArray()
+        .$begin_map()
+          .plus(1)
+          .times(2)
+        .$end_map()
+        .tap(function (err, result) {
+          if (err) return err;
+          assert.deepEqual(result, [4, 6, 8])
+        })
+        .end(done);
+
     });
   });
 
