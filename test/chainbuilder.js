@@ -108,6 +108,34 @@ describe('ChainBuilder', function () {
       });
     });
 
+    it('allows #run() to be called with only a callback', function (done) {
+
+      var myChain = chainBuilder({
+        methods: { }
+      });
+
+      var myChainImpl = myChain().inject(1);
+
+      myChainImpl.run(function (err, result) {
+        assert.equal(result, 1);
+        done();
+      });
+    });
+
+    it('allows #run() to be called without any params', function (done) {
+
+      var myChain = chainBuilder({
+        methods: { }
+      });
+
+      var myChainImpl = myChain()
+        .inject(1)
+        .tap(function (err, result) { assert.equal(result, 1); })
+        .tap(done);
+
+      myChainImpl.run();
+    });
+
     it('allows functions to access the result of the last call', function (done) {
       var testOneStub = sinon.stub().callsArgWith(0, null, 'one');
       var testTwoStub = function (done) {

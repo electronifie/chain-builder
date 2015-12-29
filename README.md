@@ -214,7 +214,7 @@ var jsonParser = request()
 jsonParser.run('http://jsonip.com', function (err, result) { console.log('' + result); /* > [object Object] */ });
 ```  
 **@param** `initialValue *` (optional) initial value to start the chain with.  
-**@param** `cb function(\*,\*, function(\*,\*))` execute a chain from the beginning.  
+**@param** `cb function(\*,\*, function(\*,\*))` (optional) execute a chain from the beginning.  
 
 #### #clone()
 Create a clone of the chain.
@@ -240,6 +240,7 @@ Gets a method passed via the methods options.
 
 ## 2015-12-29 v2.0.1
   - add `#inject()`
+  - make all `#run(initialValue, cb)` params optional 
 
 ## 2015-12-29 v2.0.0
   - introduction of `#run(initialValue, cb)`, and deferred running of chain unless an initial value is provided.
