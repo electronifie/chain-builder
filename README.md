@@ -88,14 +88,26 @@ Known mixins:
 ## Behavior
 
 ### Execution
- 1. the chain starts executing immediately, i.e. it does not wait for end() to be called.
+ 1. if a parameter is provided to the initial chain call, it will start executing immediately with that as the initial value. Otherwise,
+    it will wait for `#run()` to be called.
  2. each call merely returns the original instance, not a clone, so breaking a chain won't create a new one (like it does for lodash). This can result in some confusing behavior such as:  
+
+    ```javascript
+    var a = mathChain();
+    var b = a.add(2);
+    var c = a.add(3);
+    b.run(1, function (err, result) { /* result === 6 */ });
+    c.run(1, function (err, result) { /* result === 6 */ });
+     ```
+
+    to create a clone at a certain point, call the clone() method. e.g:
 
      ```javascript
     var a = mathChain().initialNumber(1);
-    var b = a.add(2);
-    var c = a.add(3);
-    c.end(function (err, result) { /* result === 6 */ });
+    var b = a.clone().add(2);
+    var c = a.clone().add(3);
+    b.run(1, function (err, result) { /* result === 3 */ });
+    c.run(1, function (err, result) { /* result === 4 */ });
      ```
 
 ### Errors
@@ -132,6 +144,10 @@ var request = chainBuilder({
 ### chaining methods
 Methods you can use when constructing chains.
 
+#### #chain(initialValue)
+Create an instance of the chain. If initialValue is passed, the chain will start executing immediately. If not, it will wait for `#run()` to be called.  
+**@param** `initialValue *` (optional) 
+
 #### #yourMethod(...)
 All methods you pass to `chainBuilder(...)` are available on the constructed chain, with the same signature except for the callback. Each method can make use of the _contextual methods_ described below.   
 _e.g._ 
@@ -148,6 +164,7 @@ request()
   .tap(function (err, result) { console.log('' + result); /* > {"ip":"123.123.101","about":"/about","Pro!":"http://getjsonip.com"} */ })
   .asJson()
   .tap(function (err, result) { console.log('' + result); /* > [object Object] */ })
+  .run()
 ```  
 **@param** `fn function(\*,\*)` a callback that receives an error as the first parameter or the last call's result as the second.
 
@@ -159,6 +176,7 @@ request()
   .asJson()
   .transform(function (err, result, cb) { cb(null, result.ip); })
   .tap(function (err, result) { console.log(result); /* > 123.123.101 */ })
+  .run()
 ``` 
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
@@ -170,8 +188,25 @@ request()
   .asJson() // will not be called, as the above call threw an error
   .recover(function (err, cb) { cb(null, '0.0.0.0'); })
   .tap(function (err, result) { console.log(result); /* > 0.0.0.0 */ })
+  .run()
 ``` 
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
+
+#### #run(initialValue, cb)
+Run the chain, with initialValue primed to be the first.  
+_e.g._  
+```javascript 
+var jsonParser = request()
+  .getFromPreviousResult()
+  .asJson();
+
+jsonParser.run('http://jsonip.com', function (err, result) { console.log('' + result); /* > [object Object] */ });
+```  
+**@param** `initialValue *` (optional) initial value to start the chain with.  
+**@param** `cb function(\*,\*, function(\*,\*))` execute a chain from the beginning.  
+
+#### #clone()
+Create a clone of the chain.
 
 #### #end(fn)
 Get the final result in the chain (really just a more final sounding alias of `#tap`).
