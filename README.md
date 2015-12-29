@@ -76,7 +76,10 @@ module.exports = chainBuilder({
   methods: {/* ... your methods ... */},
   mixins: [
     require('chainbuilder-lodash')(),   // Adds lodash methods like map, forEach, flatten etc...
-    require('chainbuilder-request')()   // Adds methods for making HTTP requests
+    require('chainbuilder-request')(),  // Adds methods for making HTTP requests
+    require('chainbuilder-retry')({     // Adds methods for retrying erroring methods
+      retries: 3, maxTimeout: 100 
+    })
   ]
 });
 ```
@@ -84,6 +87,7 @@ module.exports = chainBuilder({
 Known mixins:
  - [lodash](https://github.com/andrewpmckenzie/chainbuilder-lodash)
  - [request](https://github.com/andrewpmckenzie/chainbuilder-request)
+ - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
 
 ## Behavior
 
