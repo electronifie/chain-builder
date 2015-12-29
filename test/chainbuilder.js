@@ -581,8 +581,8 @@ describe('ChainBuilder', function () {
   });
 
   describe('#transform', function () {
-    it('allows you to transform a result', function () {
-      var testOneStub = sinon.stub().callsArgWith(0, null, 'boring');
+    it('allows you to transform a result', function (done) {
+      var testOneStub = sinon.stub().callsArgWith(0, null, 'one');
 
       var myChain = chainBuilder({
         methods: {
@@ -602,53 +602,40 @@ describe('ChainBuilder', function () {
           cb(null, result + 'two');
         })
         .tap(tapTwo)
-        .end(function (err, result) {
-          try {
-            assert.equal(err, null);
-            assert.equal(result, 'onetwo');
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(err, null);
+          assert.equal(result, 'onetwo');
 
-            assert.deepEqual(tapOne.firstCall.args, [ null, 'one' ]);
-            assert.deepEqual(tapTwo.firstCall.args, [ null, 'onetwo' ]);
-
-            done();
-          } catch (e) { done(e); }
-        });
+          assert.deepEqual(tapOne.firstCall.args, [ null, 'one' ]);
+          assert.deepEqual(tapTwo.firstCall.args, [ null, 'onetwo' ]);
+        })
+        .end(done);
     });
   });
 
   describe('#transformResult', function () {
-    it('allows you to synchronously transform a result', function () {
-      var testOneStub = sinon.stub().callsArgWith(0, null, 'boring');
-
+    it('allows you to synchronously transform a result', function (done) {
       var myChain = chainBuilder({
         methods: {
-          testOne: testOneStub
+          testOne: sinon.stub().callsArgWith(0, null, 'one')
         }
       });
 
       var tapOne = sinon.stub();
-      var tapTwo = sinon.stub();
 
       myChain({})
         .testOne()
         .tap(tapOne)
         .transformResult(function (result) {
-          assert.equal(err, null);
-          assert.equal(result, 'one');
           return result + 'two';
         })
-        .tap(tapTwo)
-        .end(function (err, result) {
-          try {
-            assert.equal(err, null);
-            assert.equal(result, 'onetwo');
-
-            assert.deepEqual(tapOne.firstCall.args, [ null, 'one' ]);
-            assert.deepEqual(tapTwo.firstCall.args, [ null, 'onetwo' ]);
-
-            done();
-          } catch (e) { done(e); }
-        });
+        .tap(function (err, result) {
+          if (err) return;
+          assert.equal(err, null);
+          assert.equal(result, 'onetwo');
+        })
+        .end(done);
     });
   });
 

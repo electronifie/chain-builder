@@ -256,7 +256,7 @@ Gets a method passed via the methods options.
 
 # Version History
 
-## 2015-12-29 v2.0.2
+## 2015-12-29 v2.0.3
   - add `#transformResult()`
 
 ## 2015-12-29 v2.0.1
