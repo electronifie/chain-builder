@@ -616,6 +616,42 @@ describe('ChainBuilder', function () {
     });
   });
 
+  describe('#transformResult', function () {
+    it('allows you to synchronously transform a result', function () {
+      var testOneStub = sinon.stub().callsArgWith(0, null, 'boring');
+
+      var myChain = chainBuilder({
+        methods: {
+          testOne: testOneStub
+        }
+      });
+
+      var tapOne = sinon.stub();
+      var tapTwo = sinon.stub();
+
+      myChain({})
+        .testOne()
+        .tap(tapOne)
+        .transformResult(function (result) {
+          assert.equal(err, null);
+          assert.equal(result, 'one');
+          return result + 'two';
+        })
+        .tap(tapTwo)
+        .end(function (err, result) {
+          try {
+            assert.equal(err, null);
+            assert.equal(result, 'onetwo');
+
+            assert.deepEqual(tapOne.firstCall.args, [ null, 'one' ]);
+            assert.deepEqual(tapTwo.firstCall.args, [ null, 'onetwo' ]);
+
+            done();
+          } catch (e) { done(e); }
+        });
+    });
+  });
+
   describe('#inject', function () {
     it('injects values into the chain', function (done) {
 

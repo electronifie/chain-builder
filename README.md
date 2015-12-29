@@ -184,12 +184,24 @@ request()
 **@param** `value *` the value to inject.
 
 #### #transform(fn)
-Alter the current value in the chain. Called when the previous call returned successfully, or if one of the previous calls. The passed function has acces to _context methods_.  
+Alter the current value in the chain. Called when the previous call returned successfully, or if one of the previous calls errors. The passed function has acces to _context methods_.  
 ```javascript 
 request()
   .get('http://jsonip.com')
   .asJson()
   .transform(function (err, result, cb) { cb(null, result.ip); })
+  .tap(function (err, result) { console.log(result); /* > 123.123.101 */ })
+  .run()
+``` 
+**@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
+
+#### #transform(fn)
+Alter the current value in the chain. The transform function is passed the previousResult, and expected to return a new result. The passed function has acces to _context methods_.  
+```javascript 
+request()
+  .get('http://jsonip.com')
+  .asJson()
+  .transformResult(function (result) { return result.ip; })
   .tap(function (err, result) { console.log(result); /* > 123.123.101 */ })
   .run()
 ``` 
@@ -241,6 +253,9 @@ Gets a method passed via the methods options.
 
 
 # Version History
+
+## 2015-12-29 v2.0.2
+  - add `#transformResult()`
 
 ## 2015-12-29 v2.0.1
   - add `#inject()`
