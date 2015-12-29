@@ -149,14 +149,14 @@ Create an instance of the chain. If initialValue is passed, the chain will start
 **@param** `initialValue *` (optional) 
 
 #### #yourMethod(...)
-All methods you pass to `chainBuilder(...)` are available on the constructed chain, with the same signature except for the callback. Each method can make use of the _contextual methods_ described below.   
+All methods you pass to `chainBuilder(...)` are available on the constructed chain, with the same signature except for the callback. Each method has access to the _context methods_ described below.   
 _e.g._ 
 ```javascript 
 request().get('http://jsonip.com').asJson()...
 ```
 
 #### #tap(fn)
-Peek at the current value in the chain.  
+Peek at the current value in the chain. The passed function has acces to _context methods_.  
 _e.g._
 ```javascript 
 request()
@@ -169,7 +169,7 @@ request()
 **@param** `fn function(\*,\*)` a callback that receives an error as the first parameter or the last call's result as the second.
 
 #### #transform(fn)
-Alter the current value in the chain. Called when the previous call returned successfully, or if one of the previous calls 
+Alter the current value in the chain. Called when the previous call returned successfully, or if one of the previous calls. The passed function has acces to _context methods_.  
 ```javascript 
 request()
   .get('http://jsonip.com')
@@ -193,7 +193,7 @@ request()
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
 #### #run(initialValue, cb)
-Run the chain, with initialValue primed to be the first.  
+Run the chain from the beginning, with initialValue available to the first method via `previousResult()`.  
 _e.g._  
 ```javascript 
 var jsonParser = request()
@@ -211,8 +211,9 @@ Create a clone of the chain.
 #### #end(fn)
 Get the final result in the chain (really just a more final sounding alias of `#tap`).
 
-### contextual methods
-Methods you can use from within your functions. They shouldn't be used when construction chains as they break the flow and will give you a world of async pain.
+
+## context methods
+Methods you can use from within your functions.
 
 #### this.previousResult()
 The result provided by the previous call in the chain.  
@@ -222,3 +223,13 @@ The result provided by the previous call in the chain.
 Gets a method passed via the methods options.  
 **@param** `String` the name of the method  
 **@return** `Function`  
+
+
+# Version History
+
+## 2015-12-29 v2.0.0
+  - introduction of `#run(initialValue, cb)`, and deferred running of chain unless an initial value is provided.
+  - introduction of `#clone()`
+  - support for subchains
+  - function context separated from chain object
+  - removal of `#eachResult()` and `#save()`/`#restore()`. They'll be readded later as mixins.
