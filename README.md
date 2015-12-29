@@ -148,7 +148,7 @@ var request = chainBuilder({
 ### chaining methods
 Methods you can use when constructing chains.
 
-#### #chain(initialValue)
+#### chain(initialValue) _constructor_
 Create an instance of the chain. If initialValue is passed, the chain will start executing immediately. If not, it will wait for `#run()` to be called.  
 **@param** `initialValue *` (optional) 
 
