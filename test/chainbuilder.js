@@ -185,7 +185,6 @@ describe('ChainBuilder', function () {
         methods: {
           $begin_map: beginMap,
           $end_map: endMap,
-          process: process,
           getArray: getArray,
           plus: plus,
           times: times
@@ -203,6 +202,58 @@ describe('ChainBuilder', function () {
           assert.deepEqual(result, [4, 6, 8])
         })
         .end(done);
+
+    });
+
+    it('allows embedding of sub-chains', function (done) {
+
+      var plus = function (num, done) { done(null, this.previousResult() + num); };
+      var times = function (num, done) { done(null, this.previousResult() * num); };
+      var append = function (val, done) { done(null, this.previousResult().concat(val)); };
+      var beginMap = function (done) { this.skip(done); };
+      beginMap.$beginSubchain = 'map';
+
+      var endMap = function (subchain, done) {
+        var source = this.previousResult();
+
+        var iterate = function (results) {
+          var i = results.length;
+          if (i == source.length) return done(null, results);
+          var nextResult = source[i];
+          subchain.run(nextResult, function (err, result) {
+            if (err) return done(err);
+            results.push(result);
+            iterate(results);
+          });
+        };
+        iterate([]);
+      };
+      endMap.$endSubchain = 'map';
+
+      var myChain = chainBuilder({
+        methods: {
+          $begin_map: beginMap,
+          $end_map: endMap,
+          append: append,
+          plus: plus,
+          times: times
+        }
+      });
+
+      var appendFiveAddOneTimesTwo = myChain()
+        .$begin_map()
+          .append(5)
+          .$begin_map()
+            .plus(1)
+            .times(2)
+          .$end_map()
+        .$end_map();
+
+      appendFiveAddOneTimesTwo.run([[1,2], [3,4]], function (err, result) {
+        if (err) return done(err);
+        assert.deepEqual(result, [ [4, 6, 12], [8, 10, 12] ]);
+        done();
+      });
 
     });
   });
