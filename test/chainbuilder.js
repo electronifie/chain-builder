@@ -588,4 +588,29 @@ describe('ChainBuilder', function () {
     });
   });
 
+  describe('#inject', function () {
+    it('injects values into the chain', function (done) {
+
+      var previousResult = [];
+      var myChain = chainBuilder({
+        methods: {
+          recordPreviousResult: function(done) {
+            previousResult.push(this.previousResult());
+            done();
+          }
+        }
+      });
+
+      myChain('init')
+        .recordPreviousResult()
+        .inject('foobar')
+        .recordPreviousResult()
+        .tap(function (err) {
+          if (err) return;
+          assert.deepEqual(previousResult, ['init', 'foobar']);
+        })
+        .end(done);
+    });
+  });
+
 });

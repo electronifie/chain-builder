@@ -168,6 +168,17 @@ request()
 ```  
 **@param** `fn function(\*,\*)` a callback that receives an error as the first parameter or the last call's result as the second.
 
+#### #inject(value)
+Inject the value into the chain (so it's available as `.previousResult()` to the next call).  
+_e.g._
+```javascript 
+request()
+  .inject('foobar')
+  .tap(function (err, result) { console.log(result); /* > 'foobar' */ })
+  .run()
+```  
+**@param** `value *` the value to inject.
+
 #### #transform(fn)
 Alter the current value in the chain. Called when the previous call returned successfully, or if one of the previous calls. The passed function has acces to _context methods_.  
 ```javascript 
@@ -226,6 +237,9 @@ Gets a method passed via the methods options.
 
 
 # Version History
+
+## 2015-12-29 v2.0.1
+  - add `#inject()`
 
 ## 2015-12-29 v2.0.0
   - introduction of `#run(initialValue, cb)`, and deferred running of chain unless an initial value is provided.
