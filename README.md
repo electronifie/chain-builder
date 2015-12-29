@@ -79,7 +79,8 @@ module.exports = chainBuilder({
     require('chainbuilder-request')(),  // Adds methods for making HTTP requests
     require('chainbuilder-retry')({     // Adds methods for retrying erroring calls
       retries: 3, maxTimeout: 100 
-    })
+    }),
+    require('chainbuilder-flow')()      // Adds flow methods like if, while, each and map
   ]
 });
 ```
@@ -88,6 +89,7 @@ Known mixins:
  - [lodash](https://github.com/andrewpmckenzie/chainbuilder-lodash)
  - [request](https://github.com/andrewpmckenzie/chainbuilder-request)
  - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
+ - [flow](https://github.com/andrewpmckenzie/chainbuilder-flow)
 
 ## Behavior
 
