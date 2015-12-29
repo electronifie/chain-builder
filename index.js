@@ -1,4 +1,4 @@
-var builtInMethods = require('./lib/builtInMethods');
+var builtInMethods = require('./lib/methods/builtInMethods');
 var chainFactory = require('./lib/chainFactory');
 
 module.exports = function (baseOptions) {
