@@ -1,6 +1,6 @@
 {
   "name": "chainbuilder",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Construct a chainable library from a set of async functions.",
   "main": "index.js",
   "scripts": {
@@ -31,5 +31,8 @@
     "require-dir": "^0.3.0",
     "sinon": "^1.17.2"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "optionalDependencies": {
+    "debug": "^2.2.0"
+  }
 }

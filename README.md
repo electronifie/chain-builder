@@ -256,16 +256,19 @@ Gets a method passed via the methods options.
 
 # Version History
 
+## 2015-12-29 v2.0.4
+  - add logging with optional dependency debug.
+
 ## 2015-12-29 v2.0.3
-  - add `#transformResult()`
+  - add `#transformResult()`.
 
 ## 2015-12-29 v2.0.1
   - add `#inject()`
-  - make all `#run(initialValue, cb)` params optional 
+  - make all `#run(initialValue, cb)` params optional.
 
 ## 2015-12-29 v2.0.0
   - introduction of `#run(initialValue, cb)`, and deferred running of chain unless an initial value is provided.
-  - introduction of `#clone()`
-  - support for subchains
-  - function context separated from chain object
+  - introduction of `#clone()`.
+  - support for subchains.
+  - function context separated from chain object.
   - removal of `#eachResult()` and `#save()`/`#restore()`. They'll be readded later as mixins.
