@@ -256,6 +256,9 @@ Gets a method passed via the methods options.
 
 # Version History
 
+## 2015-12-30 v2.0.6
+  - improve logging
+
 ## 2015-12-29 v2.0.5
   - improve logging
 
