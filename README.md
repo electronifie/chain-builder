@@ -95,7 +95,7 @@ Known mixins:
 Some mixins (like flow and retry) contain "block" functions that conditionally run, or re-run parts of a chain. Block methods come in pairs with `$begin` and `$end` prefixes. They're called like:
 ```javascript
 myChain(3)
-  .$beginWhile(function () { return this.previousResult() < 15 })
+  .$beginWhile(function (value) { return value < 15 })
     .plus(1)
     .times(3)
   .$endWhile()
@@ -111,37 +111,33 @@ Install [debug](http://npmjs.com/package/debug), and set the following environme
 
 Example verbose output:  
 ```
-┬ ⟸  'initialValue'                                                 
-│                                                          
-├→ getArray()                                              
-│← [1,2]                                               9ms
-│                                                          
-│                                                          
-│> map                                                     
-├─┐                                                        
-│ ┼ ⟸  1                                                  
-│ │                                                        
-│ ├→ plus(1)                                               
-│ │← 2                                                  0ms
-│ │                                                        
-│ ├→ times(2)                                              
-│ │← 4                                                  0ms
-│ │                                                        
-│ ┼ ⟸  2                                                  
-│ │                                                        
-│ ├→ plus(1)                                               
-│ │← 3                                                  3ms
-│ │                                                        
-│ ├→ times(2)                                              
-│ │← 6                                                  0ms
-│ │                                                        
-├─┘← [4,6]                                               
-│< map                                                  2ms
-│                                                          
-├→ tap()                                                   
-│← [4,6,8]                                              0ms
-│                                                          
-┴ ⟹  [4,6]
+┬ ⟸  3                                                         
+│                                                              
+│> while                                                       
+├─┐                                                            
+│ ┼ ⟸  3                                                       
+│ │                                                            
+│ ├→ plus(1)                                                   
+│ │← 4                                                      0ms
+│ │                                                            
+│ ├→ times(3)                                                  
+│ │← 12                                                     0ms
+│ │                                                            
+│ ┼ ⟸  12                                                      
+│ │                                                            
+│ ├→ plus(1)                                                   
+│ │← 13                                                     0ms
+│ │                                                            
+│ ├→ times(3)                                                  
+│ │← 39                                                     0ms
+│ │                                                            
+├─┘←                                                           
+│< while                                                    2ms
+│                                                              
+├→ plus(1)                                                     
+│← 40                                                       0ms
+│
+┴ ⟹  40
 ```
 
 **Key:**
