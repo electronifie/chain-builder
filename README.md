@@ -365,6 +365,9 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2015-12-30 v2.0.8
+  - fix logging output for subchains within aggregate functions.
+
 #### 2015-12-30 v2.0.7
   - add `#newChain()` context method.
   - tweak subchain logging output.
