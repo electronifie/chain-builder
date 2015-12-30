@@ -91,38 +91,17 @@ Known mixins:
  - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
  - [flow](https://github.com/andrewpmckenzie/chainbuilder-flow)
 
-### Creating mixins
-A mixin is merely a map of functions like `methods`. Each function just needs to take a callback as its final parameter, and has access to all the _context methods_.
-
-#### Block mixins 
-Are created by defining a begin and end method with the `$beginSubchain`/`$endSubchain` set like so:
+## Blocks
+Some mixins (like flow and retry) contain "block" functions that conditionally run, or re-run parts of a chain. Block methods come in pairs with `$begin` and `$end` prefixes. They're called like:
 ```javascript
-var beginEach = function (done) { 
-  // Pass the previous result on to the end method
-  done(err, this.previousResult()); 
-};
-var endEach = function (chain, done) { 
-  // Pass the previous result on to the end method
-  var array = this.previousResult();
-  var next = function (err) {
-    if (err) return done(err);
-    if (array.length === 0) return done();
-    chain.run(array.pop(), next);
-  };
-};
-
-beginEach.$beginSubchain = 'each';
-endEach.$endSubchain = 'each';
-
-module.exports = {
-  $beginEach: beginEach,
-  $endEach: endEach
-};
+myChain(3)
+  .$beginWhile(function () { return this.previousResult() < 15 })
+    .plus(1)
+    .times(3)
+  .$endWhile()
+  .plus(1)
+  .end(function (err, result) { console.log(result); /* > 40 */ });
 ```
-
-The end method will be passed the subchain as its first parameter.
-
-By convention, begin methods always start `$begin` and end methods with `$end`. They also need to have the `.$beginSubchain` and `.$endSubchain` values set to the same value (for identifying them as block methods and detection of unclosed / mismatched blocks). There are lots of examples of block mixins in the [chainbuilder-flow](https://github.com/andrewpmckenzie/chainbuilder-flow/tree/master/lib) mixin.
 
 ## Troubleshooting
 
@@ -186,35 +165,6 @@ block with result `[4,6]`, and an iteration with initial value of `2`:
 ├─┘← [4,6]
 │< map
 ```
-
-## Behavior
-
-### Execution
- 1. if a parameter is provided to the initial chain call, it will start executing immediately with that as the initial value. Otherwise,
-    it will wait for `#run()` to be called.
- 2. each call merely returns the original instance, not a clone, so breaking a chain won't create a new one (like it does for lodash). This can result in some confusing behavior such as:  
-
-    ```javascript
-    var a = mathChain();
-    var b = a.add(2);
-    var c = a.add(3);
-    b.run(1, function (err, result) { /* result === 6 */ });
-    c.run(1, function (err, result) { /* result === 6 */ });
-     ```
-
-    to create a clone at a certain point, call the clone() method. e.g:
-
-     ```javascript
-    var a = mathChain().initialNumber(1);
-    var b = a.clone().add(2);
-    var c = a.clone().add(3);
-    b.run(1, function (err, result) { /* result === 3 */ });
-    c.run(1, function (err, result) { /* result === 4 */ });
-     ```
-
-### Errors
- 1. errors can be provided as the first argument of the callback or thrown
- 2. if an error occurs, subsequent calls will be skipped until `end(...)`, `transform(...)` or `recover(...)` are encountered.
 
 # API
 ### `chainBuilder(options)`
@@ -349,23 +299,84 @@ Gets a method passed via the methods options.
 **@param** `String` the name of the method  
 **@return** `Function`  
 
+## Creating mixins
+A mixin is merely a map of functions like `methods`. Each function just needs to take a callback as its final parameter, and has access to all the _context methods_.
+
+#### Block mixins 
+Are created by defining a begin and end method with the `$beginSubchain`/`$endSubchain` set like so:
+```javascript
+var beginEach = function (done) { 
+  // Pass the previous result on to the end method
+  done(err, this.previousResult()); 
+};
+var endEach = function (chain, done) { 
+  // Pass the previous result on to the end method
+  var array = this.previousResult();
+  var next = function (err) {
+    if (err) return done(err);
+    if (array.length === 0) return done();
+    chain.run(array.pop(), next);
+  };
+};
+
+beginEach.$beginSubchain = 'each';
+endEach.$endSubchain = 'each';
+
+module.exports = {
+  $beginEach: beginEach,
+  $endEach: endEach
+};
+```
+
+The end method will be passed the subchain as its first parameter.
+
+By convention, begin methods always start `$begin` and end methods with `$end`. They also need to have the `.$beginSubchain` and `.$endSubchain` values set to the same value (for identifying them as block methods and detection of unclosed / mismatched blocks). There are lots of examples of block mixins in the [chainbuilder-flow](https://github.com/andrewpmckenzie/chainbuilder-flow/tree/master/lib) mixin.
+
+## Behavior
+
+### Execution
+ 1. if a parameter is provided to the initial chain call, it will start executing immediately with that as the initial value. Otherwise,
+    it will wait for `#run()` to be called.
+ 2. each call merely returns the original instance, not a clone, so breaking a chain won't create a new one (like it does for lodash). This can result in some confusing behavior such as:  
+
+    ```javascript
+    var a = mathChain();
+    var b = a.add(2);
+    var c = a.add(3);
+    b.run(1, function (err, result) { /* result === 6 */ });
+    c.run(1, function (err, result) { /* result === 6 */ });
+     ```
+
+    to create a clone at a certain point, call the clone() method. e.g:
+
+     ```javascript
+    var a = mathChain().initialNumber(1);
+    var b = a.clone().add(2);
+    var c = a.clone().add(3);
+    b.run(1, function (err, result) { /* result === 3 */ });
+    c.run(1, function (err, result) { /* result === 4 */ });
+     ```
+
+### Errors
+ 1. errors can be provided as the first argument of the callback or thrown
+ 2. if an error occurs, subsequent calls will be skipped until `end(...)`, `transform(...)` or `recover(...)` are encountered.
 
 # Version History
 
-## 2015-12-29 v2.0.5
+#### 2015-12-29 v2.0.5
   - improve logging
 
-## 2015-12-29 v2.0.4
+#### 2015-12-29 v2.0.4
   - add logging with optional dependency debug.
 
-## 2015-12-29 v2.0.3
+#### 2015-12-29 v2.0.3
   - add `#transformResult()`.
 
-## 2015-12-29 v2.0.1
+#### 2015-12-29 v2.0.1
   - add `#inject()`
   - make all `#run(initialValue, cb)` params optional.
 
-## 2015-12-29 v2.0.0
+#### 2015-12-29 v2.0.0
   - introduction of `#run(initialValue, cb)`, and deferred running of chain unless an initial value is provided.
   - introduction of `#clone()`.
   - support for subchains.
