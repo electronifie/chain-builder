@@ -91,6 +91,69 @@ Known mixins:
  - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
  - [flow](https://github.com/andrewpmckenzie/chainbuilder-flow)
 
+## Logging
+
+Install [debug](http://npmjs.com/package/debug), and set the following environmental variables to enable logging:
+ - `DEBUG=chainbuilder:*` timing, flow and call success/failure
+ - `CB_VERBOSE=true DEBUG=chainbuilder:*` same as above as well as call params and results
+
+Example verbose output:  
+```
+┬ ⟸  'initialValue'                                                 
+│                                                          
+├→ getArray()                                              
+│← [1,2]                                               9ms
+│                                                          
+│                                                          
+│> map                                                     
+├─┐                                                        
+│ ┼ ⟸  1                                                  
+│ │                                                        
+│ ├→ plus(1)                                               
+│ │← 2                                                  0ms
+│ │                                                        
+│ ├→ times(2)                                              
+│ │← 4                                                  0ms
+│ │                                                        
+│ ┼ ⟸  2                                                  
+│ │                                                        
+│ ├→ plus(1)                                               
+│ │← 3                                                  3ms
+│ │                                                        
+│ ├→ times(2)                                              
+│ │← 6                                                  0ms
+│ │                                                        
+├─┘← [4,6]                                               
+│< map                                                  2ms
+│                                                          
+├→ tap()                                                   
+│← [4,6,8]                                              0ms
+│                                                          
+┴ ⟹  [4,6]
+```
+
+**Key:**
+
+| symbol           |  description                                       |
+|------------------|----------------------------------------------------|
+| `┬ ⟸ 12`        | initial value (of `12`)                            |
+| `┴ ⟹  "onetwo"` | result (of `'onetwo'`)                             |
+| `├→ plus(1)`     | call (of `plus(1)`)                                |
+| `│⤸ `            | skipped call (because a previous call errored)     |
+| `│← 1`           | successful result (of 1)                           |
+| `│✕ BANG`        | call resulted in an error (of `new Error('BANG')`) |
+
+block with result `[4,6]`, and an iteration with initial value of `2`:
+```
+│> map
+├─┐
+...
+│ ┼ ⟸  2                                                  
+...
+├─┘← [4,6]
+│< map
+```
+
 ## Behavior
 
 ### Execution
