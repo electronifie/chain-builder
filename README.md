@@ -111,31 +111,31 @@ Install [debug](http://npmjs.com/package/debug), and set the following environme
 
 Example verbose output:  
 ```
-┬ ⟸  3                                                         
-│                                                              
-│> while                                                       
-├─┐                                                            
-│ ┼ ⟸  3                                                       
-│ │                                                            
-│ ├→ plus(1)                                                   
-│ │← 4                                                      0ms
-│ │                                                            
-│ ├→ times(3)                                                  
-│ │← 12                                                     0ms
-│ │                                                            
-│ ┼ ⟸  12                                                      
-│ │                                                            
-│ ├→ plus(1)                                                   
-│ │← 13                                                     0ms
-│ │                                                            
-│ ├→ times(3)                                                  
-│ │← 39                                                     0ms
-│ │                                                            
-├─┘←                                                           
-│< while                                                    2ms
-│                                                              
-├→ plus(1)                                                     
-│← 40                                                       0ms
+┬ ⟸  3
+│
+├→ $beginWhile()
+│ ┬ ⟸  3
+│ │
+│ ├→ plus(1)
+│ │← 4                               0ms
+│ │
+│ ├→ times(3)
+│ │← 12                              2ms
+│ │
+│ ┴ ⟹  12
+│ ┬ ⟸  12
+│ │
+│ ├→ plus(1)
+│ │← 13                              0ms
+│ │
+│ ├→ times(3)
+│ │← 39                              2ms
+│ │
+│ ┴ ⟹  39
+│← 39                                4ms
+│
+├→ plus(1)
+│← 40                                0ms
 │
 ┴ ⟹  40
 ```
@@ -151,15 +151,16 @@ Example verbose output:
 | `│← 1`           | successful result (of 1)                           |
 | `│✕ BANG`        | call resulted in an error (of `new Error('BANG')`) |
 
-block with result `[4,6]`, and an iteration with initial value of `2`:
+block call of `$beginMap`/`$endMap` with result `[4,6]`, and an iteration with initial value of `2`:
 ```
-│> map
-├─┐
+├→ $beginMap()
 ...
-│ ┼ ⟸  2                                                  
+│ ┬ ⟸  2
+│ ├→ plus(2)
+│ │← 12
+│ ┴ ⟹  4
 ...
-├─┘← [4,6]
-│< map
+│← [4,6]
 ```
 
 # API
@@ -290,10 +291,15 @@ Methods you can use from within your functions.
 The result provided by the previous call in the chain.  
 **@return** `String`
 
-#### this.getMethod(string)
+#### this.getMethod(methodName)
 Gets a method passed via the methods options.  
-**@param** `String` the name of the method  
+**@param** `String` **methodName** the name of the method  
 **@return** `Function`  
+
+#### this.newChain(initialValue)
+Create a new chain object (will show in logs as a sub-chain).  
+**@param** `String` **initialValue** the name of the method  
+**@return** `Chain`  
 
 ## Creating mixins
 A mixin is merely a map of functions like `methods`. Each function just needs to take a callback as its final parameter, and has access to all the _context methods_.
@@ -359,11 +365,15 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2015-12-30 v2.0.7
+  - add `#newChain()` context method.
+  - tweak subchain logging output.
+
 #### 2015-12-30 v2.0.6
-  - improve logging
+  - improve logging.
 
 #### 2015-12-29 v2.0.5
-  - improve logging
+  - improve logging.
 
 #### 2015-12-29 v2.0.4
   - add logging with optional dependency debug.

@@ -183,7 +183,7 @@ describe('ChainBuilder', function () {
         .end(done);
     });
 
-    it('allows definition of sub-chains', function (done) {
+    it('allows user-defined sub-chains', function (done) {
       var getArray = function (done) { return done(null, [1, 2, 3]); };
       var plus = function (num, done) { done(null, this.previousResult() + num); };
       var times = function (num, done) { done(null, this.previousResult() * num); };
@@ -230,7 +230,6 @@ describe('ChainBuilder', function () {
           assert.deepEqual(result, [4, 6, 8])
         })
         .end(done);
-
     });
 
     it('allows embedding of sub-chains', function (done) {
@@ -283,6 +282,36 @@ describe('ChainBuilder', function () {
         done();
       });
 
+    });
+
+    it('supports aggregate functions with #newChain', function (done) {
+      var plus = function (num, done) { done(null, this.previousResult() + num); };
+      var times = function (num, done) { done(null, this.previousResult() * num); };
+      var addOneAndTimesTwo = function (done) {
+        var chain = this.newChain(this.previousResult());
+        assert.equal(typeof chain.plus, 'function');
+
+        chain
+          .plus(1)
+          .times(2)
+          .end(done);
+      };
+
+      var myChain = chainBuilder({
+        methods: {
+          plus: plus,
+          times: times,
+          addOneAndTimesTwo: addOneAndTimesTwo
+        }
+      });
+
+      myChain(3)
+        .addOneAndTimesTwo()
+        .tap(function (err, result) {
+          if (err) return err;
+          assert.deepEqual(result, 8)
+        })
+        .end(done);
     });
   });
 
