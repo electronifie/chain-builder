@@ -365,6 +365,9 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2015-12-30 v2.0.9
+  - fix logging of objects with circular reference
+
 #### 2015-12-30 v2.0.8
   - fix logging output for subchains within aggregate functions.
 
