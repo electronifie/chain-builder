@@ -50,7 +50,7 @@ Create chains out of your async functions.
 
 ## Alternatively, use one file per function
 
-You can keep things tidy with one file per function and requireDir (you'll need to `npm install require-dir --save`), like...
+You can keep things tidy with one file per function and [requireDir](https://www.npmjs.com/package/require-dir) (you'll need to `npm install require-dir --save`), like...
 ```
 lib/
 |- getHighScores.js
@@ -91,34 +91,76 @@ Known mixins:
  - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
  - [flow](https://github.com/andrewpmckenzie/chainbuilder-flow)
 
-## Behavior
+## Blocks
+Some mixins (like flow and retry) contain "block" functions that conditionally run, or re-run parts of a chain. Block methods come in pairs with `$begin` and `$end` prefixes. They're called like:
+```javascript
+myChain(3)
+  .$beginWhile(function (value) { return value < 15 })
+    .plus(1)
+    .times(3)
+  .$endWhile()
+  .plus(1)
+  .end(function (err, result) { console.log(result); /* > 40 */ });
+```
 
-### Execution
- 1. if a parameter is provided to the initial chain call, it will start executing immediately with that as the initial value. Otherwise,
-    it will wait for `#run()` to be called.
- 2. each call merely returns the original instance, not a clone, so breaking a chain won't create a new one (like it does for lodash). This can result in some confusing behavior such as:  
+## Troubleshooting
 
-    ```javascript
-    var a = mathChain();
-    var b = a.add(2);
-    var c = a.add(3);
-    b.run(1, function (err, result) { /* result === 6 */ });
-    c.run(1, function (err, result) { /* result === 6 */ });
-     ```
+Install [debug](http://npmjs.com/package/debug), and set the following environmental variables to enable logging:
+ - `DEBUG=chainbuilder:*` timing, flow and call success/failure
+ - `CB_VERBOSE=true DEBUG=chainbuilder:*` same as above as well as call params and results
 
-    to create a clone at a certain point, call the clone() method. e.g:
+Example verbose output:  
+```
+┬ ⟸  3                                                         
+│                                                              
+│> while                                                       
+├─┐                                                            
+│ ┼ ⟸  3                                                       
+│ │                                                            
+│ ├→ plus(1)                                                   
+│ │← 4                                                      0ms
+│ │                                                            
+│ ├→ times(3)                                                  
+│ │← 12                                                     0ms
+│ │                                                            
+│ ┼ ⟸  12                                                      
+│ │                                                            
+│ ├→ plus(1)                                                   
+│ │← 13                                                     0ms
+│ │                                                            
+│ ├→ times(3)                                                  
+│ │← 39                                                     0ms
+│ │                                                            
+├─┘←                                                           
+│< while                                                    2ms
+│                                                              
+├→ plus(1)                                                     
+│← 40                                                       0ms
+│
+┴ ⟹  40
+```
 
-     ```javascript
-    var a = mathChain().initialNumber(1);
-    var b = a.clone().add(2);
-    var c = a.clone().add(3);
-    b.run(1, function (err, result) { /* result === 3 */ });
-    c.run(1, function (err, result) { /* result === 4 */ });
-     ```
+**Key:**
 
-### Errors
- 1. errors can be provided as the first argument of the callback or thrown
- 2. if an error occurs, subsequent calls will be skipped until `end(...)`, `transform(...)` or `recover(...)` are encountered.
+| symbol           |  description                                       |
+|------------------|----------------------------------------------------|
+| `┬ ⟸ 12`        | initial value (of `12`)                            |
+| `┴ ⟹  "onetwo"` | result (of `'onetwo'`)                             |
+| `├→ plus(1)`     | call (of `plus(1)`)                                |
+| `│⤸ plus(1)`     | skipped call (because a previous call errored)     |
+| `│← 1`           | successful result (of 1)                           |
+| `│✕ BANG`        | call resulted in an error (of `new Error('BANG')`) |
+
+block with result `[4,6]`, and an iteration with initial value of `2`:
+```
+│> map
+├─┐
+...
+│ ┼ ⟸  2                                                  
+...
+├─┘← [4,6]
+│< map
+```
 
 # API
 ### `chainBuilder(options)`
@@ -197,7 +239,7 @@ request()
 ``` 
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
-#### #transform(fn)
+#### #transformResult(fn)
 Alter the current value in the chain. The transform function is passed the previousResult, and expected to return a new result. The passed function has acces to _context methods_.  
 ```javascript 
 request()
@@ -253,26 +295,87 @@ Gets a method passed via the methods options.
 **@param** `String` the name of the method  
 **@return** `Function`  
 
+## Creating mixins
+A mixin is merely a map of functions like `methods`. Each function just needs to take a callback as its final parameter, and has access to all the _context methods_.
+
+#### Block mixins 
+Are created by defining a begin and end method with the `$beginSubchain`/`$endSubchain` set like so:
+```javascript
+var beginEach = function (done) { 
+  // Pass the previous result on to the end method
+  done(err, this.previousResult()); 
+};
+var endEach = function (chain, done) { 
+  // Pass the previous result on to the end method
+  var array = this.previousResult();
+  var next = function (err) {
+    if (err) return done(err);
+    if (array.length === 0) return done();
+    chain.run(array.pop(), next);
+  };
+};
+
+beginEach.$beginSubchain = 'each';
+endEach.$endSubchain = 'each';
+
+module.exports = {
+  $beginEach: beginEach,
+  $endEach: endEach
+};
+```
+
+The end method will be passed the subchain as its first parameter.
+
+By convention, begin methods always start `$begin` and end methods with `$end`. They also need to have the `.$beginSubchain` and `.$endSubchain` values set to the same value (for identifying them as block methods and detection of unclosed / mismatched blocks). There are lots of examples of block mixins in the [chainbuilder-flow](https://github.com/andrewpmckenzie/chainbuilder-flow/tree/master/lib) mixin.
+
+## Behavior
+
+### Execution
+ 1. if a parameter is provided to the initial chain call, it will start executing immediately with that as the initial value. Otherwise,
+    it will wait for `#run()` to be called.
+ 2. each call merely returns the original instance, not a clone, so breaking a chain won't create a new one (like it does for lodash). This can result in some confusing behavior such as:  
+
+    ```javascript
+    var a = mathChain();
+    var b = a.add(2);
+    var c = a.add(3);
+    b.run(1, function (err, result) { /* result === 6 */ });
+    c.run(1, function (err, result) { /* result === 6 */ });
+     ```
+
+    to create a clone at a certain point, call the clone() method. e.g:
+
+     ```javascript
+    var a = mathChain().initialNumber(1);
+    var b = a.clone().add(2);
+    var c = a.clone().add(3);
+    b.run(1, function (err, result) { /* result === 3 */ });
+    c.run(1, function (err, result) { /* result === 4 */ });
+     ```
+
+### Errors
+ 1. errors can be provided as the first argument of the callback or thrown
+ 2. if an error occurs, subsequent calls will be skipped until `end(...)`, `transform(...)` or `recover(...)` are encountered.
 
 # Version History
 
-## 2015-12-30 v2.0.6
+#### 2015-12-30 v2.0.6
   - improve logging
 
-## 2015-12-29 v2.0.5
+#### 2015-12-29 v2.0.5
   - improve logging
 
-## 2015-12-29 v2.0.4
+#### 2015-12-29 v2.0.4
   - add logging with optional dependency debug.
 
-## 2015-12-29 v2.0.3
+#### 2015-12-29 v2.0.3
   - add `#transformResult()`.
 
-## 2015-12-29 v2.0.1
+#### 2015-12-29 v2.0.1
   - add `#inject()`
   - make all `#run(initialValue, cb)` params optional.
 
-## 2015-12-29 v2.0.0
+#### 2015-12-29 v2.0.0
   - introduction of `#run(initialValue, cb)`, and deferred running of chain unless an initial value is provided.
   - introduction of `#clone()`.
   - support for subchains.
