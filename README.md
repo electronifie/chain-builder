@@ -147,7 +147,7 @@ Example verbose output:
 | `┬ ⟸ 12`        | initial value (of `12`)                            |
 | `┴ ⟹  "onetwo"` | result (of `'onetwo'`)                             |
 | `├→ plus(1)`     | call (of `plus(1)`)                                |
-| `│⤸ `            | skipped call (because a previous call errored)     |
+| `│⤸ plus(1)`     | skipped call (because a previous call errored)     |
 | `│← 1`           | successful result (of 1)                           |
 | `│✕ BANG`        | call resulted in an error (of `new Error('BANG')`) |
 
