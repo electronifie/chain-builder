@@ -50,7 +50,7 @@ Create chains out of your async functions.
 
 ## Alternatively, use one file per function
 
-You can keep things tidy with one file per function and requireDir (you'll need to `npm install require-dir --save`), like...
+You can keep things tidy with one file per function and [requireDir](https://www.npmjs.com/package/require-dir) (you'll need to `npm install require-dir --save`), like...
 ```
 lib/
 |- getHighScores.js
@@ -91,7 +91,40 @@ Known mixins:
  - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
  - [flow](https://github.com/andrewpmckenzie/chainbuilder-flow)
 
-## Logging
+### Creating mixins
+A mixin is merely a map of functions like `methods`. Each function just needs to take a callback as its final parameter, and has access to all the _context methods_.
+
+#### Block mixins 
+Are created by defining a begin and end method with the `$beginSubchain`/`$endSubchain` set like so:
+```javascript
+var beginEach = function (done) { 
+  // Pass the previous result on to the end method
+  done(err, this.previousResult()); 
+};
+var endEach = function (chain, done) { 
+  // Pass the previous result on to the end method
+  var array = this.previousResult();
+  var next = function (err) {
+    if (err) return done(err);
+    if (array.length === 0) return done();
+    chain.run(array.pop(), next);
+  };
+};
+
+beginEach.$beginSubchain = 'each';
+endEach.$endSubchain = 'each';
+
+module.exports = {
+  $beginEach: beginEach,
+  $endEach: endEach
+};
+```
+
+The end method will be passed the subchain as its first parameter.
+
+By convention, begin methods always start `$begin` and end methods with `$end`. They also need to have the `.$beginSubchain` and `.$endSubchain` values set to the same value (for identifying them as block methods and detection of unclosed / mismatched blocks). There are lots of examples of block mixins in the [chainbuilder-flow](https://github.com/andrewpmckenzie/chainbuilder-flow/tree/master/lib) mixin.
+
+## Troubleshooting
 
 Install [debug](http://npmjs.com/package/debug), and set the following environmental variables to enable logging:
  - `DEBUG=chainbuilder:*` timing, flow and call success/failure
@@ -260,7 +293,7 @@ request()
 ``` 
 **@param** `fn function(\*,\*, function(\*,\*))` a function that receives an error as the first parameter or the last call's result as the second, and a callback as the final parameter that takes the transformed error or result.
 
-#### #transform(fn)
+#### #transformResult(fn)
 Alter the current value in the chain. The transform function is passed the previousResult, and expected to return a new result. The passed function has acces to _context methods_.  
 ```javascript 
 request()
