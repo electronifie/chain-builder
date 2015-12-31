@@ -76,20 +76,22 @@ module.exports = chainBuilder({
   methods: {/* ... your methods ... */},
   mixins: [
     require('chainbuilder-lodash')(),   // Adds lodash methods like map, forEach, flatten etc...
-    require('chainbuilder-request')(),  // Adds methods for making HTTP requests
-    require('chainbuilder-retry')({     // Adds methods for retrying erroring calls
+    require('chainbuilder-request')(),  // Methods for making HTTP requests
+    require('chainbuilder-retry')({     // Methods for retrying erroring calls
       retries: 3, maxTimeout: 100 
     }),
-    require('chainbuilder-flow')()      // Adds flow methods like if, while, each and map
+    require('chainbuilder-flow')(),     // Flow methods like if, while, each and map
+    require('chainbuilder-save')()      // Methods for saving and re-injecting values in the chain
   ]
 });
 ```
 
-Known mixins:
+Available mixins:
  - [lodash](https://github.com/andrewpmckenzie/chainbuilder-lodash)
  - [request](https://github.com/andrewpmckenzie/chainbuilder-request)
  - [retry](https://github.com/andrewpmckenzie/chainbuilder-retry)
  - [flow](https://github.com/andrewpmckenzie/chainbuilder-flow)
+ - [save](https://github.com/andrewpmckenzie/chainbuilder-save)
 
 ## Blocks
 Some mixins (like flow and retry) contain "block" functions that conditionally run, or re-run parts of a chain. Block methods come in pairs with `$begin` and `$end` prefixes. They're called like:
