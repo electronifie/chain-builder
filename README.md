@@ -365,6 +365,9 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2015-12-31 v2.0.10
+  - support mixin-provided context methods
+
 #### 2015-12-30 v2.0.9
   - fix logging of objects with circular reference
 

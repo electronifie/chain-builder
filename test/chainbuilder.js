@@ -159,7 +159,7 @@ describe('ChainBuilder', function () {
         });
     });
 
-    it('give functions to access to other functions via this.getMethod(functionName).', function (done) {
+    it('give functions to access to other functions via this.getMethod(functionName)', function (done) {
       var prefixPrepender = function (prefix, word, done) { done(null, prefix + word); };
       var inPrepender = function (word, done) { this.getMethod('prefixPrepender')('in', word, done); };
 
@@ -183,7 +183,7 @@ describe('ChainBuilder', function () {
         .end(done);
     });
 
-    it('allows user-defined sub-chains', function (done) {
+    it('allows user-defined sub-chains via the $beginSubchain and $endSubchain properties', function (done) {
       var getArray = function (done) { return done(null, [1, 2, 3]); };
       var plus = function (num, done) { done(null, this.previousResult() + num); };
       var times = function (num, done) { done(null, this.previousResult() * num); };
@@ -534,6 +534,37 @@ describe('ChainBuilder', function () {
           mixins: [mixinPackageOne, mixinPackageTwo]
         });
       }, 'Method "two" was provided by "mixin #0" and "mixin #1".');
+    });
+
+    it('allows mixins to define context methods via the $contextMethod property', function (done) {
+      var useContextMethod = function (done) {
+        assert.equal(typeof this.myContextMethod, 'function');
+        done(null, this.myContextMethod());
+      };
+      var myContextMethod = function () {
+        return 'from-context-method';
+      };
+      myContextMethod.$contextMethod = true;
+
+      var myChain = chainBuilder({
+        methods: {
+          useContextMethod: useContextMethod
+        },
+        mixins: [{
+          myContextMethod: myContextMethod
+        }]
+      });
+
+      // the context method shouldn't be present on the outer chain.
+      assert.equal(typeof myChain.myContextMethod, 'undefined');
+
+      myChain({})
+        .useContextMethod()
+        .tap(function (err, result) {
+          if (err) return err;
+          assert.equal(result, 'from-context-method');
+        })
+        .end(done);
     });
   });
 

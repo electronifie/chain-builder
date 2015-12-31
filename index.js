@@ -6,6 +6,8 @@ module.exports = function (baseOptions) {
   var passedMethods = baseOptions.methods;
   var passedMixins = baseOptions.mixins;
 
+  var contextMethods = {};
+  var contextMethodSources = {};
   var methods = {};
   var methodSources = {};
 
@@ -15,15 +17,26 @@ module.exports = function (baseOptions) {
     methodSources[name] = source;
   };
 
-  var addMethods = function (methodMap, source) {
-    for (var name in methodMap) addMethod(name, methodMap[name], source);
+  var addContextMethod = function (name, method, source) {
+    if (contextMethods[name]) throw new Error('Method "' + name + '" was provided by "' + contextMethodSources[name] + '" and "' + source + '".');
+    contextMethods[name] = method;
+    contextMethodSources[name] = source;
+  };
+
+  var addMethods = function (methodMap, source, forceContextMethod) {
+    var name, method;
+    for (name in methodMap) {
+      if (!methodMap.hasOwnProperty(name)) continue;
+      method = methodMap[name];
+      (method.$contextMethod || forceContextMethod ? addContextMethod : addMethod)(name, method, source);
+    }
   };
 
   addMethods(builtInMethods, 'builtInMethods');
   addMethods(passedMethods, 'methods');
   for (var i = 0; i < (passedMixins || []).length; i++) addMethods(passedMixins[i], 'mixin #' + i);
 
-  var Chain = chainFactory(methods);
+  var Chain = chainFactory(methods, contextMethods);
 
   // Return a constructor for the chain
   return function (initialResult) {
