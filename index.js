@@ -1,10 +1,50 @@
 var builtInMethods = require('./lib/methods/builtInMethods');
 var chainFactory = require('./lib/chainFactory');
 
-module.exports = function (baseOptions) {
-  if (! (baseOptions.methods || baseOptions.mixins)) throw new Error('options.methods or options.mixins must be provided.');
-  var passedMethods = baseOptions.methods;
-  var passedMixins = baseOptions.mixins;
+/** @module chainbuilder */
+
+/**
+ * @callback ChainConstructor
+ * @param {*} [initialValue] - value to start the chain with. If provided the chain will start executing immediately,
+ *                             otherwise {@link Chain#run} will need to be called.
+ * @returns {Chain}
+ */
+
+/**
+ * @memberof module:chainbuilder
+ * @exports chainbuilder
+ *
+ * @function
+ * @param {Object}               options
+ * @param {MethodCallback[]}     options.methods - custom methods for this chain
+ * @param {Mixin[]}              options.mixins  - mixins for this chain
+ * @returns {module:chainbuilder~ChainConstructor}
+ *
+ * @example
+ * var chainbuilder = require('chainbuilder');
+ * var myChain = chainbuilder({
+ *   methods: {
+ *     add: function (number, done) { done(null, number + this.previousResult()); }
+ *   }
+ * });
+ *
+ * myChain(3)
+ *   .add(2)
+ *   .end(function (err, result) {
+ *     result == 5;
+ *   });
+ *
+ * myChain()
+ *   .add(2)
+ *   .add(5)
+ *   .run(3, function (err, result) {
+ *     result == 10;
+ *   })
+ */
+module.exports = function (options) {
+  if (! (options.methods || options.mixins)) throw new Error('options.methods or options.mixins must be provided.');
+  var passedMethods = options.methods;
+  var passedMixins = options.mixins;
 
   var contextMethods = {};
   var contextMethodSources = {};

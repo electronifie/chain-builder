@@ -205,7 +205,7 @@ request().get('http://jsonip.com').asJson()...
 ```
 
 #### #tap(fn)
-Peek at the current value in the chain. The passed function has acces to _context methods_.  
+Peek at the current value in the chain. The passed function has access to _context methods_.  
 _e.g._
 ```javascript 
 request()

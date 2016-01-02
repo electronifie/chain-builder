@@ -1,0 +1,20 @@
+{
+  "source": {
+    "include": [ "./lib", "./index.js" ]
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "opts": {
+    "destination": "./doc/",
+    "readme": "README.md",
+    "recurse": true,
+    "template": "node_modules/ink-docstrap/template"
+  },
+  "templates": {
+    "systemName": "chainbuilder",
+    "theme": "yeti",
+    "outputSourceFiles": false,
+    "linenums": false
+  }
+}

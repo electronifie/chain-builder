@@ -4,7 +4,8 @@
   "description": "Construct a chainable library from a set of async functions.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "./node_modules/.bin/mocha",
+    "doc": "./node_modules/.bin/jsdoc -c .jsdoc.json"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,9 @@
   "homepage": "https://github.com/electronifie/chain-builder",
   "devDependencies": {
     "chai": "^3.4.1",
+    "ink-docstrap": "^1.1.0",
+    "jaguarjs-jsdoc": "0.0.1",
+    "jsdoc": "^3.4.0",
     "mocha": "^2.3.4",
     "mockery": "^1.4.0",
     "require-dir": "^0.3.0",
