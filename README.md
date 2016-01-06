@@ -367,6 +367,9 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2016-01-06 v2.0.13
+  - Fix logging of undefined/null
+
 #### 2016-01-06 v2.0.12
   - Fix logging of errors + functions
 
