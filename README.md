@@ -367,6 +367,13 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2016-01-06 v2.0.12
+  - Fix logging of errors + functions
+
+#### 2016-01-06 v2.0.11
+  - refactor, moving subchain tracking from Chain to CallQueue
+  - add `.parent` to CallContext
+
 #### 2015-12-31 v2.0.10
   - support mixin-provided context methods
 
