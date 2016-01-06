@@ -159,7 +159,7 @@ describe('ChainBuilder', function () {
         });
     });
 
-    it('give functions to access to other functions via this.getMethod(functionName)', function (done) {
+    it('gives methods access to other methods on the chain via this.getMethod(functionName)', function (done) {
       var prefixPrepender = function (prefix, word, done) { done(null, prefix + word); };
       var inPrepender = function (word, done) { this.getMethod('prefixPrepender')('in', word, done); };
 
@@ -281,6 +281,70 @@ describe('ChainBuilder', function () {
         assert.deepEqual(result, [ [4, 6, 12], [8, 10, 12] ]);
         done();
       });
+
+    });
+
+    it('grants access to the parent context of a sub-chain', function (done) {
+      var saveToObject = function (key, value, done) {
+        this[key] = value;
+        this.skip(done);
+      };
+
+      var $beginWithSubchain = function (done) { this.skip(done); };
+      $beginWithSubchain.$beginSubchain = 'withSubchain';
+
+      var $endWithSubchain = function (subchain, done) {
+        var source = this.previousResult();
+        subchain.run(source, done);
+      };
+      $endWithSubchain.$endSubchain = 'withSubchain';
+
+      var myChain = chainBuilder({
+        methods: {
+          $beginWithSubchain: $beginWithSubchain,
+          $endWithSubchain: $endWithSubchain,
+          saveToObject: saveToObject
+        }
+      });
+
+      myChain() // ------------------------------------------------------------- grandparent
+        .saveToObject('savedValue', 'value-1')
+        .tap(function (err) {
+          if (err) return;
+          assert.equal(this.savedValue, 'value-1');
+        })
+
+        .$beginWithSubchain() // ----------------------------------------------- parent
+          .saveToObject('savedValue', 'value-2')
+          .tap(function (err) {
+            if (err) return;
+            assert.equal(this.savedValue, 'value-2');
+            assert.equal(this.parent.savedValue, 'value-1');
+          })
+
+          .$beginWithSubchain() // --------------------------------------------- child
+            .tap(function (err) {
+              if (err) return;
+              assert.equal(this.savedValue, undefined);
+              assert.equal(this.parent.savedValue, 'value-2');
+              assert.equal(this.parent.parent.savedValue, 'value-1');
+            })
+          .$endWithSubchain()
+
+        .$endWithSubchain()
+
+        .$beginWithSubchain() // ----------------------------------------------- parent's sibling
+          .tap(function (err) {
+            if (err) return;
+            assert.equal(this.savedValue, undefined);
+          })
+        .$endWithSubchain()
+
+        .tap(function (err) {
+          if (err) return;
+          assert.equal(this.savedValue, 'value-1');
+        })
+        .run(done);
 
     });
 
