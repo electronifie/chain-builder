@@ -1,6 +1,6 @@
 {
   "name": "chainbuilder",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "description": "Construct a chainable library from a set of async functions.",
   "main": "index.js",
   "scripts": {
