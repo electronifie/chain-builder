@@ -802,6 +802,68 @@ describe('ChainBuilder', function () {
       });
     });
 
+    describe('$previousResult', function () {
+      describe('$previousResult.type', function () {
+        it('fails if previousResult is the wrong type', function (done) {
+          var myMethod = function (cb) { cb(null, this.previousResult()); };
+          myMethod.$previousResult = { type: 'string' };
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .inject(123)
+            .myMethod()
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Expected previousResult to be "string" but was "number": 123');
+              cb();
+            })
+            .run(done);
+        });
+
+        it('passes if previousResult is the right type', function (done) {
+          var myMethod = function (cb) { cb(null, this.previousResult()); };
+          myMethod.$previousResult = { type: 'number' };
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .inject(123)
+            .myMethod()
+            .run(done);
+        });
+      });
+
+      describe('$previousResult.instanceOf', function () {
+        it('fails if previousResult is the wrong type', function (done) {
+          var FooClass = function FooClass (name) { this.name = name; };
+
+          var myMethod = function (cb) { cb(null, this.previousResult()); };
+          myMethod.$previousResult = { instanceOf: FooClass };
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .inject({ name: 'foo' })
+            .myMethod()
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Expected previousResult to be an instance of <FooClass>');
+              cb();
+            })
+            .run(done);
+        });
+
+        it('passes if previousResult is the right type', function (done) {
+          var FooClass = function FooClass (name) { this.name = name; };
+
+          var myMethod = function (cb) { cb(null, this.previousResult()); };
+          myMethod.$previousResult = { instanceOf: FooClass };
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .inject(new FooClass('foo'))
+            .myMethod()
+            .run(done);
+        });
+      });
+    });
+
   });
 
   describe('#tap', function () {
