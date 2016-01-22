@@ -635,28 +635,41 @@ describe('ChainBuilder', function () {
   describe('validation', function () {
     describe('$args', function () {
       it('populates non-provided args with defaults', function (done) {
-        var myMethod = function (argA, argB, argC, cb) {
+        var myMethod = function (argA, argB, argC, argD, cb) {
           assert.equal(typeof argA, 'string');
           assert.equal(typeof argB, 'object');
           assert.equal(typeof argC, 'number');
           assert.equal(typeof cb, 'function');
 
-          cb(null, [argA, argB, argC]);
+          cb(null, [argA, argB, argC, argD]);
         };
 
-        myMethod.$args = [{ default: 'a' }, { default: {} }, { default: 1 }];
+        myMethod.$args = [{ default: 'a' }, { default: {} }, { default: 1 }, { defaultToPreviousResult: true }];
 
         var cb = chainBuilder({ methods: { myMethod: myMethod } });
 
         cb()
+          .inject('pr-1')
           .myMethod()
-          .transformResult(function (result) { assert.deepEqual(result, ['a', {}, 1]); })
+          .transformResult(function (result) { assert.deepEqual(result, ['a', {}, 1, 'pr-1']); })
+
+          .inject('pr-2')
           .myMethod('b')
-          .transformResult(function (result) { assert.deepEqual(result, ['b', {}, 1]); })
+          .transformResult(function (result) { assert.deepEqual(result, ['b', {}, 1, 'pr-2']); })
+
+          .inject('pr-3')
           .myMethod('c', { foo: 'bar' })
-          .transformResult(function (result) { assert.deepEqual(result, ['c', { foo: 'bar' }, 1]); })
+          .transformResult(function (result) { assert.deepEqual(result, ['c', { foo: 'bar' }, 1, 'pr-3']); })
+
+          .inject('pr-4')
           .myMethod('d', { bar: 'bing' }, 2)
-          .transformResult(function (result) { assert.deepEqual(result, ['d', { bar: 'bing' }, 2]); })
+          .transformResult(function (result) { assert.deepEqual(result, ['d', { bar: 'bing' }, 2, 'pr-4']); })
+
+
+          .inject('pr-5')
+          .myMethod('e', { bar: 'bap' }, 3, 'bop')
+          .transformResult(function (result) { assert.deepEqual(result, ['e', { bar: 'bap' }, 3, 'bop']); })
+
           .run(done);
 
       });
@@ -725,6 +738,38 @@ describe('ChainBuilder', function () {
             function (r) { throw new Error('This should not be run, as a function is expected') }
           )
           .transformResult(function (r) { assert.deepEqual(r, [ 'str-5', { val: 5 }, 5, 'function' ]) })
+          .run(done);
+      });
+
+      it('works together', function (done) {
+        var myMethod = function (argA, argB, argC, cb) {
+          cb(null, [argA, argB, argC]);
+        };
+        myMethod.$args = [{
+          type: 'string',
+          default: 'foobar'
+        }, {
+          type: 'object',
+          defaultToPreviousResult: true
+        }, {
+          type: 'number',
+          default: 42
+        }];
+        cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+        cb()
+          .myMethod(1)
+          .recover(function (err, cb) {
+            assert.equal(err && err.message, 'Validation Error. Expected "number" to be "string" for: 1');
+            cb();
+          })
+
+          .inject({ foo: 'bar'})
+          .myMethod()
+          .transformResult(function (result) {
+            assert.deepEqual(result, ['foobar', { foo: 'bar' }, 42])
+          })
+
           .run(done);
       });
     });
