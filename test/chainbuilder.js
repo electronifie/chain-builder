@@ -632,6 +632,37 @@ describe('ChainBuilder', function () {
     });
   });
 
+  describe('validation', function () {
+    describe('$args', function () {
+      it('populates non-provided args with defaults', function (done) {
+        var myMethod = function (argA, argB, argC, cb) {
+          assert.equal(typeof argA, 'string');
+          assert.equal(typeof argB, 'object');
+          assert.equal(typeof argC, 'number');
+          assert.equal(typeof cb, 'function');
+
+          cb(null, [argA, argB, argC]);
+        };
+
+        myMethod.$args = [{ default: 'a' }, { default: {} }, { default: 1 }];
+
+        var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+        cb()
+          .myMethod()
+          .transformResult(function (result) { assert.deepEqual(result, ['a', {}, 1]); })
+          .myMethod('b')
+          .transformResult(function (result) { assert.deepEqual(result, ['b', {}, 1]); })
+          .myMethod('c', { foo: 'bar' })
+          .transformResult(function (result) { assert.deepEqual(result, ['c', { foo: 'bar' }, 1]); })
+          .myMethod('d', { bar: 'bing' }, 2)
+          .transformResult(function (result) { assert.deepEqual(result, ['d', { bar: 'bing' }, 2]); })
+          .run(done);
+
+      });
+    });
+  });
+
   describe('#tap', function () {
     it('lets you peek at the current result within a chain', function (done) {
       var testOneStub = sinon.stub().callsArgWith(0, null, 'one');
