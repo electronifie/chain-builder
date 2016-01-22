@@ -661,7 +661,7 @@ describe('ChainBuilder', function () {
 
       });
 
-      describe('validates argument type', function (done) {
+      describe('validates argument type', function () {
         var cb;
         beforeEach(function () {
           var myMethod = function (argA, argB, argC, cb) { cb(null, [argA, argB, argC]); };
@@ -711,6 +711,22 @@ describe('ChainBuilder', function () {
         });
       });
 
+      it('generates args when a non-expected function is provided', function (done) {
+        var myMethod = function (argA, argB, argC, argD, cb) { cb(null, [argA, argB, argC, typeof argD]); };
+        myMethod.$args = [{ type: 'string' }, { type: 'object' }, { type: 'number' }, { type: 'function' }];
+        var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+        cb()
+          .inject(5)
+          .myMethod(
+            function (r) { return 'str-' + r; },
+            function (r) { return { val: this.previousResult() }; },
+            function (r) { return r; },
+            function (r) { throw new Error('This should not be run, as a function is expected') }
+          )
+          .transformResult(function (r) { assert.deepEqual(r, [ 'str-5', { val: 5 }, 5, 'function' ]) })
+          .run(done);
+      });
     });
   });
 
