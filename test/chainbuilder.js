@@ -688,6 +688,20 @@ describe('ChainBuilder', function () {
             .run(done);
       });
 
+      it('asserts no more than the expected number of args are provided', function (done) {
+        var myMethod = function (argA, argB, argC, cb) { cb(null, [argA, argB, argC]); };
+        myMethod.$args = [{ required: true }, { required: true }, { default: '3' }];
+        var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+        cb()
+          .myMethod('one', 'two', 'three', 'four')
+          .transform(function (err, result, cb) {
+            assert.equal(err && err.message, 'Validation Error. Expected 3 arguments, but got 4');
+            cb();
+          })
+          .run(done);
+      });
+
       describe('validates argument type', function () {
         var cb;
         beforeEach(function () {
@@ -787,6 +801,7 @@ describe('ChainBuilder', function () {
           .run(done);
       });
     });
+
   });
 
   describe('#tap', function () {
