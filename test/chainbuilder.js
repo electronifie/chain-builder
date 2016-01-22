@@ -660,6 +660,57 @@ describe('ChainBuilder', function () {
           .run(done);
 
       });
+
+      describe('validates argument type', function (done) {
+        var cb;
+        beforeEach(function () {
+          var myMethod = function (argA, argB, argC, cb) { cb(null, [argA, argB, argC]); };
+          myMethod.$args = [{ type: 'string' }, { type: 'object' }, { type: 'number' }];
+          cb = chainBuilder({ methods: { myMethod: myMethod } });
+        });
+
+        it('passes validation', function (done) {
+          cb()
+            .myMethod('a', {}, 0)
+            .transform(function (err, result, cb) {
+              assert.notOk(err);
+              assert.deepEqual(result, ['a', {}, 0]);
+              cb();
+            })
+            .run(done);
+        });
+
+        it('reports invalid string', function (done) {
+          cb()
+            .myMethod(0, {}, 0)
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Expected "number" to be "string" for: 0');
+              cb();
+            })
+            .run(done);
+        });
+
+        it('reports invalid object', function (done) {
+          cb()
+            .myMethod('a', 'foo', 0)
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Expected "string" to be "object" for: foo');
+              cb();
+            })
+            .run(done);
+        });
+
+        it('reports invalid number', function (done) {
+          cb()
+            .myMethod('a', { }, 'foo')
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Expected "string" to be "number" for: foo');
+              cb();
+            })
+            .run(done);
+        });
+      });
+
     });
   });
 
