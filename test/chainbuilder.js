@@ -674,6 +674,20 @@ describe('ChainBuilder', function () {
 
       });
 
+      it('asserts required args', function (done) {
+          var myMethod = function (argA, argB, argC, cb) { cb(null, [argA, argB, argC]); };
+          myMethod.$args = [{ required: true }, { required: true }, { default: 'c' }];
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .myMethod()
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Argument 1 is required but was not provided.');
+              cb();
+            })
+            .run(done);
+      });
+
       describe('validates argument type', function () {
         var cb;
         beforeEach(function () {
@@ -759,7 +773,7 @@ describe('ChainBuilder', function () {
 
         cb()
           .myMethod(1)
-          .recover(function (err, cb) {
+          .transform(function (err, result, cb) {
             assert.equal(err && err.message, 'Validation Error. Expected "number" to be "string" for: 1');
             cb();
           })
