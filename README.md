@@ -367,6 +367,9 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2016-01-22 v2.0.15
+  - Add instanceOf validation to args
+
 #### 2016-01-22 v2.0.14
   - Add argument validation via fn.$previousResult and fn.$args
 

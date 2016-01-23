@@ -752,6 +752,37 @@ describe('ChainBuilder', function () {
         });
       });
 
+      describe('validates class instances', function () {
+        it('fails if the wrong type is provided', function (done) {
+          var FooClass = function FooClass (name) { this.name = name; };
+          var BarClass = function BarClass (name) { this.name = name; };
+
+          var myMethod = function (argA, cb) { cb(null, this.previousResult()); };
+          myMethod.$args = [{ instanceOf: FooClass }];
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .myMethod(new BarClass('bar'))
+            .transform(function (err, result, cb) {
+              assert.equal(err && err.message, 'Validation Error. Expected argument 1 to be an instance of <FooClass>');
+              cb();
+            })
+            .run(done);
+        });
+
+        it('passes if the right type is provided', function (done) {
+          var FooClass = function FooClass (name) { this.name = name; };
+
+          var myMethod = function (argA, cb) { cb(null, this.previousResult()); };
+          myMethod.$args = [{ instanceOf: FooClass }];
+          var cb = chainBuilder({ methods: { myMethod: myMethod } });
+
+          cb()
+            .myMethod(new FooClass('bar'))
+            .run(done);
+        });
+      });
+
       it('generates args when a non-expected function is provided', function (done) {
         var myMethod = function (argA, argB, argC, argD, cb) { cb(null, [argA, argB, argC, typeof argD]); };
         myMethod.$args = [{ type: 'string' }, { type: 'object' }, { type: 'number' }, { type: 'function' }];
