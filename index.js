@@ -46,6 +46,7 @@ module.exports = function (options) {
   var passedMethods = options.methods;
   var passedMixins = options.mixins;
 
+  var logHandlers = [];
   var contextMethods = {};
   var contextMethodSources = {};
   var methods = {};
@@ -67,8 +68,14 @@ module.exports = function (options) {
     var name, method;
     for (name in methodMap) {
       if (!methodMap.hasOwnProperty(name)) continue;
-      method = methodMap[name];
-      (method.$contextMethod || forceContextMethod ? addContextMethod : addMethod)(name, method, source);
+      method = methodMap[ name ];
+      if (method.$logHandler) {
+        logHandlers.push(method);
+      } else if (method.$contextMethod || forceContextMethod) {
+        addContextMethod(name, method, source);
+      } else {
+        addMethod(name, method, source);
+      }
     }
   };
 
@@ -76,7 +83,7 @@ module.exports = function (options) {
   addMethods(passedMethods, 'methods');
   for (var i = 0; i < (passedMixins || []).length; i++) addMethods(passedMixins[i], 'mixin #' + i);
 
-  var Chain = chainFactory(methods, contextMethods);
+  var Chain = chainFactory(methods, contextMethods, logHandlers);
 
   // Return a constructor for the chain
   return function (initialResult) {
