@@ -916,15 +916,18 @@ describe('ChainBuilder', function () {
         logger.log.$logHandler = true;
 
         var $beginBlock = function (cb) { cb(null, 'beginning block'); };
-        var $endBlock = function (chain, cb) { chain.run(cb); };
+        var $endBlock = function (chain, cb) { chain.run('c2', cb); };
         $beginBlock.$beginSubchain = 'block';
         $endBlock.$endSubchain = 'block';
 
+        var testOne = function (arg, cb) { cb(null, arg + '-one'); };
+        testOne.$args = [{ type: 'string', default: 'def' }];
+
         var myChain = chainBuilder({
           methods: {
-            testOne: function (arg, cb) { cb(null, arg + '-one'); },
+            testOne: testOne,
             testTwo: function (cb) { setTimeout(cb.bind(cb, null, 'two'), 10); },
-            testThree: function (cb) { this.newChain().testOne('three').run(cb); },
+            testThree: function (cb) { this.newChain().testOne('three').run('c3', cb); },
             $beginBlock: $beginBlock,
             $endBlock: $endBlock
           },
@@ -932,13 +935,13 @@ describe('ChainBuilder', function () {
         });
 
         myChain()
-          .testOne('a')
+          .testOne(function () { return 'a'; })
           .$beginBlock()
             .testOne('b')
             .testTwo()
           .$endBlock()
           .testThree()
-          .run(done);
+          .run('c1', done);
       });
 
       it('provides the appropriate event types', function () {
@@ -1190,6 +1193,65 @@ describe('ChainBuilder', function () {
         ]);
       });
 
+      it('provides args', function () {
+        payloads[1].args[0] = payloads[1].args[0].toString();
+        assert.deepEqual(_.map(payloads, 'args'), [
+          undefined,
+            ["function () { return 'a'; }"], undefined,
+            [], undefined,
+            [],
+              undefined,
+                ['b'], undefined,
+                [], undefined,
+              undefined,
+            undefined,
+            [],
+              undefined,
+                ['three'], undefined,
+              undefined,
+            undefined,
+          undefined
+        ]);
+
+        payloads[5].evaluatedArgs[0] = typeof payloads[5].evaluatedArgs[0];
+        assert.deepEqual(_.map(payloads, 'evaluatedArgs'), [
+          undefined,
+            ['a'], undefined,
+            [], undefined,
+            ['object'], // passed a chain
+              undefined,
+                ['b'], undefined,
+                [], undefined,
+              undefined,
+            undefined,
+            [],
+              undefined,
+                ['three'], undefined,
+              undefined,
+            undefined,
+          undefined
+        ]);
+      });
+
+      it('povides initialValue', function () {
+        assert.deepEqual(_.map(payloads, 'initialValue'), [
+          'c1',
+            undefined, undefined,
+            undefined, undefined,
+            undefined,
+              'c2',
+                undefined, undefined,
+                undefined, undefined,
+              undefined,
+            undefined,
+            undefined,
+              'c3',
+                undefined, undefined,
+              undefined,
+            undefined,
+          undefined
+        ]);
+      });
     });
   });
 
