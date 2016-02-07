@@ -1233,7 +1233,7 @@ describe('ChainBuilder', function () {
         ]);
       });
 
-      it('povides initialValue', function () {
+      it('provides initialValue', function () {
         assert.deepEqual(_.map(payloads, 'initialValue'), [
           'c1',
             undefined, undefined,
@@ -1246,6 +1246,26 @@ describe('ChainBuilder', function () {
             undefined,
             undefined,
               'c3',
+                undefined, undefined,
+              undefined,
+            undefined,
+          undefined
+        ]);
+      });
+
+      it('provides the method to be called', function () {
+        assert.deepEqual(_.map(payloads, 'method.$beginSubchain'), [
+          undefined,
+            undefined, undefined,
+            'block' , undefined,
+            undefined,
+              undefined,
+                undefined, undefined,
+                undefined, undefined,
+              undefined,
+            undefined,
+            undefined,
+              undefined,
                 undefined, undefined,
               undefined,
             undefined,
