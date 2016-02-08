@@ -311,7 +311,10 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
-#### 2016-01-22 v2.1.0
+#### 2016-02-08 v2.1.1
+  - Log calls to 'end' as 'chainEnd'
+
+#### 2016-02-08 v2.1.0
   - Enable logging mixins via fn.$loggingHandler
   - Remove logging in favor of [log-console](https://github.com/andrewpmckenzie/chainbuilder-log-console) mixin
 
