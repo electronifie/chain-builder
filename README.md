@@ -311,6 +311,10 @@ By convention, begin methods always start `$begin` and end methods with `$end`. 
 
 # Version History
 
+#### 2016-02-08 v2.2.0
+  - Provide stack traces to logging (when `enableStack: true` is provided as a chainbuilder option)
+  - Add #cleanStack context method
+
 #### 2016-02-08 v2.1.1
   - Log calls to 'end' as 'chainEnd'
 
