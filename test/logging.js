@@ -6,12 +6,11 @@ var mockery = require('mockery');
 var sinon = require('sinon');
 
 describe('Logging', function () {
-
   var chainBuilder = require('..');
 
   describe('passes a logger with "chainStart", "chainEnd", "callStart" and "callEnd" events', function () {
     var eventTypes, payloads;
-
+    // WARNING: changing anything in this method block (or above) will require the stacktrace tests to be updated
     beforeEach(function (done) {
       eventTypes = [];
       payloads = [];
@@ -32,10 +31,17 @@ describe('Logging', function () {
       testOne.$args = [{ type: 'string', default: 'def' }];
 
       var myChain = chainBuilder({
+        enableStack: true,
         methods: {
           testOne: testOne,
-          testTwo: function (cb) { setTimeout(cb.bind(cb, null, 'two'), 10); },
-          testThree: function (cb) { this.newChain().testOne('three').run('c3', cb); },
+          testTwo: function (cb) {
+            setTimeout(function () {
+              cb(null, 'two');
+            }, 10);
+          },
+          testThree: function (cb) {
+            this.newChain().testOne('three').run('c3', cb);
+          },
           $beginBlock: $beginBlock,
           $endBlock: $endBlock
         },
@@ -377,6 +383,58 @@ describe('Logging', function () {
               undefined, undefined,
             undefined,
           undefined,
+        undefined
+      ]);
+    });
+
+    it('provides "callStack" on callStart and callEnd with the location of the instance\'s method call', function () {
+      var stack = _.chain(payloads)
+        .map('callStack[0]')
+        .map(function (e) { return (e && e.replace(/^.+\(.+\/chainbuilder\/([^)]+)\)$/, '$1')); })
+        .value();
+
+      // Note - will break if the beforeEach block changes position.
+      assert.deepEqual(stack, [
+        undefined,
+          'test/logging.js:52:10', 'test/logging.js:52:10',      // testOne
+          'test/logging.js:53:10', 'test/logging.js:53:10',      // $beginBlock
+          'test/logging.js:56:10',                               // $endBlock
+            undefined,
+              'test/logging.js:54:12', 'test/logging.js:54:12',  // testOne
+              'test/logging.js:55:12', 'test/logging.js:55:12',  // testTwo
+            undefined,
+          'test/logging.js:56:10',
+          'test/logging.js:57:10',                               // testThree
+            undefined,
+              'test/logging.js:43:29', 'test/logging.js:43:29',  // testOne
+            undefined,
+          'test/logging.js:57:10',
+        undefined
+      ]);
+    });
+
+    it('provides "execStack" on callEnd with the location of the result-generating-method\'s cb', function () {
+      var stack = _.chain(payloads)
+        .map('execStack[0]')
+        .map(function (e) { return (e && e.replace(/^.+\(.+\/chainbuilder\/([^)]+)\)$/, '$1')); })
+        .value();
+
+      // Note - will break if the beforeEach block changes position.
+      assert.deepEqual(stack, [
+        undefined,
+          undefined, 'test/logging.js:30:42',      // testOne
+          undefined, 'test/logging.js:25:41',      // $beginBlock
+          undefined,
+            undefined,
+              undefined, 'test/logging.js:30:42',  // testOne
+              undefined, 'test/logging.js:39:15',  // testTwo
+            undefined,
+          'test/logging.js:39:15',                 // $endBlock
+          undefined,
+            undefined,
+              undefined, 'test/logging.js:30:42',  // testOne
+            undefined,
+          'test/logging.js:30:42',                 // testThree
         undefined
       ]);
     });

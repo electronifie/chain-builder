@@ -45,6 +45,7 @@ module.exports = function (options) {
   if (! (options.methods || options.mixins)) throw new Error('options.methods or options.mixins must be provided.');
   var passedMethods = options.methods;
   var passedMixins = options.mixins;
+  var enableStack = options.enableStack;
 
   var logHandlers = [];
   var contextMethods = {};
@@ -83,7 +84,7 @@ module.exports = function (options) {
   addMethods(passedMethods, 'methods');
   for (var i = 0; i < (passedMixins || []).length; i++) addMethods(passedMixins[i], 'mixin #' + i);
 
-  var Chain = chainFactory(methods, contextMethods, logHandlers);
+  var Chain = chainFactory(methods, contextMethods, logHandlers, { enableStack: enableStack });
 
   // Return a constructor for the chain
   return function (initialResult) {
