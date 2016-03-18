@@ -390,7 +390,7 @@ describe('Logging', function () {
     it('provides "callStack" on callStart and callEnd with the location of the instance\'s method call', function () {
       var stack = _.chain(payloads)
         .map('callStack[0]')
-        .map(function (e) { return (e && e.replace(/^.+\(.+\/chainbuilder\/([^)]+)\)$/, '$1')); })
+        .map(function (e) { return (e && e.replace(/^.+\/(test\/[^)]+)\)$/, '$1')); })
         .value();
 
       // Note - will break if the beforeEach block changes position.
@@ -416,7 +416,7 @@ describe('Logging', function () {
     it('provides "execStack" on callEnd with the location of the result-generating-method\'s cb', function () {
       var stack = _.chain(payloads)
         .map('execStack[0]')
-        .map(function (e) { return (e && e.replace(/^.+\(.+\/chainbuilder\/([^)]+)\)$/, '$1')); })
+        .map(function (e) { return (e && e.replace(/^.+\/(test\/[^)]+)\)$/, '$1')); })
         .value();
 
       // Note - will break if the beforeEach block changes position.
