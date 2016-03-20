@@ -55,7 +55,6 @@ lib/
    |- index.js
    |- find.js
    |- getGames.js
-   |- pluck.js
 ```
 ```javascript
 // lib/users/index.js
