@@ -24,12 +24,9 @@ Create chains out of your async functions.
       getGames: function (cb) {
         var user = this.previousResult();
         ...
-      },
-      pluck: function (key, cb) { 
-        var object = this.previousResult();
-        cb(null, _.pluck(object, key)); 
       }
-    }
+    },
+    mixins: [ require('chainbuilder-lodash')() ] // for pluck
   });
 ```
 
